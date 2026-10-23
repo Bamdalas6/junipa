@@ -8,7 +8,8 @@ import { Badge, Button } from "./ui";
 export interface Tier {
   id: "starter" | "pro";
   name: string;
-  price: number;
+  price: number; // charged, after any founding discount
+  listPrice: number;
   blurb: string;
   accounts: number;
   peoplePerAccount: number;
@@ -20,9 +21,10 @@ export interface Tier {
 export interface PayConfig {
   enabled: boolean;
   provider?: "bachs" | "paystack" | null;
+  founding?: { percent: number; spots: number } | null;
   currency: string;
   tiers: Tier[];
-  social?: { id: string; name: string; price: number; days: number; features: string[] };
+  social?: { id: string; name: string; price: number; listPrice: number; days: number; features: string[] };
 }
 
 export const usd = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
@@ -106,9 +108,12 @@ export function Paywall({
   return (
     <div className="card-raised rise overflow-hidden">
       <div className="border-b border-line p-6 sm:p-8">
-        <Badge tone="accent">
-          <Lock className="size-3" /> Steps 5 and 6 · per campaign
-        </Badge>
+        <span className="flex flex-wrap items-center gap-2">
+          <Badge tone="accent">
+            <Lock className="size-3" /> Steps 5 and 6 · per campaign
+          </Badge>
+          {config?.founding && <Badge tone="good">Founding customer · {config.founding.percent}% off</Badge>}
+        </span>
         <h2 className="mt-4 text-[24px] font-semibold leading-tight tracking-[-0.025em] sm:text-[28px]">Unlock decision makers and outreach</h2>
         <p className="mt-2 max-w-2xl text-[14px] leading-relaxed text-muted">
           Scout found {prospects} prospect{prospects === 1 ? "" : "s"} for {brand}
@@ -141,6 +146,7 @@ export function Paywall({
               <p className="text-[12.5px] text-muted">{t.blurb}</p>
               <p className="mt-4 flex items-baseline gap-1.5">
                 <span className="text-[40px] font-semibold leading-none tracking-[-0.04em]">{usd(t.price)}</span>
+                {t.listPrice > t.price && <span className="text-[15px] text-faint line-through">{usd(t.listPrice)}</span>}
                 <span className="text-[12.5px] text-muted">/ campaign</span>
               </p>
               <ul className="mt-4 space-y-2">

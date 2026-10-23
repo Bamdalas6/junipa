@@ -14,6 +14,7 @@ import type { Market } from "@/lib/geo";
 import { INDUSTRIES, getIndustry } from "@/lib/industries";
 import { PLATFORMS, parseHandle } from "@/lib/social-shared";
 import { cleanDomain, clearAllWorkspaces, listWorkspaces, type WorkspaceSummary } from "@/lib/store";
+import { SAMPLE_TESTIMONIALS, TESTIMONIALS, type Testimonial } from "@/lib/testimonials";
 
 const DEMO_HREF = "/w/lagos-label.example?industry=fashion&demo=1";
 const VALID = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/;
@@ -367,6 +368,9 @@ export default function Home() {
           </ol>
         </Section>
 
+        {/* Testimonials (real ones only), or the founding-customer offer until there are some */}
+        <Proof onStart={focusInput} />
+
         {/* Pricing */}
         <Section id="pricing">
           <Head title={"Research is free.\nPay per campaign."} body="Brand, competitors, audiences and prospects cost nothing. Unlock decision makers and outreach once per campaign. No seats, no subscription." />
@@ -629,7 +633,7 @@ function Pricing({ onStart }: { onStart: () => void }) {
       <div className="grid lg:grid-cols-3">
         <Plan name="Research" price="$0" unit="free forever" blurb="Steps 1-4: understand your market." features={free} cta="Start free" onClick={onStart} />
         {(config?.tiers ?? []).map((t) => (
-          <Plan key={t.id} name={t.name} price={usd(t.price)} unit="per campaign" blurb={`${t.blurb}. Steps 5-6.`} features={t.features} cta={`Start with ${t.name}`} onClick={onStart} highlight={t.highlight} />
+          <Plan key={t.id} name={t.name} price={usd(t.price)} listPrice={t.listPrice > t.price ? usd(t.listPrice) : undefined} unit={config?.founding ? `per campaign · founding price` : "per campaign"} blurb={`${t.blurb}. Steps 5-6.`} features={t.features} cta={`Start with ${t.name}`} onClick={onStart} highlight={t.highlight} />
         ))}
         {!config && [0, 1].map((i) => <div key={i} className="skeleton m-8 h-96 rounded-lg" />)}
       </div>
@@ -645,6 +649,7 @@ function Pricing({ onStart }: { onStart: () => void }) {
           </div>
           <B className="flex items-baseline gap-2">
             <span className="text-[36px] font-semibold tracking-[-0.03em]">{usd(config.social.price)}</span>
+            {config.social.listPrice > config.social.price && <span className="text-[16px] text-faint line-through">{usd(config.social.listPrice)}</span>}
             <span className="font-mono text-[12px] text-muted">per plan</span>
           </B>
           <B>
@@ -658,14 +663,21 @@ function Pricing({ onStart }: { onStart: () => void }) {
   );
 }
 
-function Plan({ name, price, unit, blurb, features, cta, onClick, highlight }: { name: string; price: string; unit: string; blurb: string; features: string[]; cta: string; onClick: () => void; highlight?: boolean }) {
+function Plan({ name, price, listPrice, unit, blurb, features, cta, onClick, highlight }: { name: string; price: string; listPrice?: string; unit: string; blurb: string; features: string[]; cta: string; onClick: () => void; highlight?: boolean }) {
   return (
     <div className={`flex flex-col border-line px-5 py-10 sm:px-8 [&:not(:first-child)]:max-lg:border-t lg:[&:not(:first-child)]:border-l ${highlight ? "bg-white" : ""}`}>
       <B className="flex items-center gap-2">
         <span className="text-[16px] font-semibold">{name}</span>
         {highlight && <span className="rounded bg-accent-soft px-1.5 py-px font-mono text-[11px] text-accent">most popular</span>}
       </B>
-      <B kind="type" speed={70} text={price} className="mt-5 text-[44px] font-semibold leading-none tracking-[-0.04em]" />
+      <div className="mt-5 flex items-baseline gap-3">
+        <B kind="type" speed={70} text={price} className="text-[44px] font-semibold leading-none tracking-[-0.04em]" />
+        {listPrice && (
+          <B as="span" className="text-[18px] text-faint line-through">
+            {listPrice}
+          </B>
+        )}
+      </div>
       <B as="p" className="mt-2.5 font-mono text-[12px] text-muted">
         {unit}
       </B>
@@ -692,3 +704,100 @@ function Plan({ name, price, unit, blurb, features, cta, onClick, highlight }: {
     </div>
   );
 }
+
+/* ---------- Social proof ---------- */
+
+// Real testimonials when there are some. Until then: the founding-customer offer
+// (if REACHLY_FOUNDING_DISCOUNT is set), and on your own computer the 20 sample
+// cards so the layout can be reviewed. Samples never reach the live site.
+function Proof({ onStart }: { onStart: () => void }) {
+  const config = usePayConfig();
+  const real = TESTIMONIALS.slice(0, 20);
+  const samples = process.env.NODE_ENV !== "production" && real.length === 0;
+  const list = real.length ? real : samples ? SAMPLE_TESTIMONIALS : [];
+  const founding = config?.founding;
+  if (!list.length && !founding) return null;
+  return (
+    <Section id="customers">
+      {founding && real.length < 20 && <FoundingOffer percent={founding.percent} spots={founding.spots} onStart={onStart} />}
+      {list.length > 0 && (
+        <>
+          <Head title={"What customers\nsay about Junia."} body="From founders and sales teams who ran their first campaigns with Scout." />
+          {samples && (
+            <p className="-mt-8 mb-8 rounded-lg border border-dashed border-warn/40 bg-warn-soft px-4 py-3 font-mono text-[12px] text-warn">
+              Sample cards, shown only on your computer. Add real quotes in src/lib/testimonials.ts and these disappear.
+            </p>
+          )}
+          <div className="-mx-5 columns-1 gap-0 border-t border-line sm:-mx-8 md:columns-2 lg:columns-3">
+            {list.map((t, i) => (
+              <TestimonialCard key={i} t={t} sample={samples} />
+            ))}
+          </div>
+        </>
+      )}
+    </Section>
+  );
+}
+
+function TestimonialCard({ t, sample }: { t: Testimonial; sample: boolean }) {
+  const initials = t.name
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  return (
+    <B as="figure" className="break-inside-avoid border-b border-line px-5 py-7 sm:px-8">
+      {sample && <span className="mb-3 inline-block rounded bg-warn-soft px-1.5 py-px font-mono text-[11px] text-warn">Sample</span>}
+      <blockquote className="text-[15.5px] leading-[1.6] text-ink">&ldquo;{t.quote}&rdquo;</blockquote>
+      <figcaption className="mt-5 flex items-center gap-3">
+        {t.photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={t.photo} alt="" width={36} height={36} className="size-9 rounded-full object-cover" />
+        ) : (
+          <span className="grid size-9 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">{initials}</span>
+        )}
+        <span className="min-w-0">
+          <span className="block text-[14px] font-semibold">{t.name}</span>
+          <span className="block truncate text-[13px] text-muted">
+            {t.role}, {t.company}
+            {t.country ? ` · ${t.country}` : ""}
+          </span>
+        </span>
+      </figcaption>
+      {t.incentive && <p className="mt-3 font-mono text-[11px] text-faint">{t.incentive}</p>}
+    </B>
+  );
+}
+
+function FoundingOffer({ percent, spots, onStart }: { percent: number; spots: number; onStart: () => void }) {
+  return (
+    <div className="-mx-5 grid border-b border-line sm:-mx-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="px-5 py-14 sm:px-8 lg:py-20">
+        <B as="p" className="font-mono text-[12px] text-accent">
+          founding customers
+        </B>
+        <B as="h2" kind="type" speed={30} text={`Be one of our first ${spots}.`} className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-[-0.03em] sm:text-[40px]" />
+        <B as="p" className="mt-5 max-w-[520px] text-[15.5px] leading-[1.6] text-muted">
+          Junia is new. Our first {spots} customers get {percent}% off every campaign, and we&apos;d love your honest feedback on what to build next.
+        </B>
+        <B className="mt-8">
+          <a href="#start" onClick={onStart} className="inline-flex h-11 items-center gap-1.5 rounded-lg bg-ink px-5 text-[14.5px] font-semibold text-white hover:bg-ink-2">
+            Claim a founding spot <ArrowRight className="size-4" />
+          </a>
+        </B>
+      </div>
+      <div className="flex items-center border-t border-line px-5 py-12 sm:px-8 lg:border-l lg:border-t-0">
+        <B as="ul" className="space-y-3 text-[14.5px]">
+          {[`${percent}% off every campaign while spots last`, "Research is still free, before you pay anything", "A direct line to the team for feedback", "Your quote on this page, if you'd like that"].map((x) => (
+            <li key={x} className="flex items-start gap-2.5">
+              <Check className="mt-0.5 size-4 shrink-0 text-good" />
+              {x}
+            </li>
+          ))}
+        </B>
+      </div>
+    </div>
+  );
+}
+

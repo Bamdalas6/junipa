@@ -10,7 +10,8 @@ export type TierId = "starter" | "pro";
 export interface Tier {
   id: TierId;
   name: string;
-  price: number; // USD
+  price: number; // USD charged (after any founding discount)
+  listPrice: number; // USD before the discount
   blurb: string;
   accounts: number; // prospect accounts that get decision makers
   peoplePerAccount: number;
@@ -21,11 +22,24 @@ export interface Tier {
 
 export const CURRENCY = "USD";
 
+/**
+ * Founding-customer offer: REACHLY_FOUNDING_DISCOUNT=50 takes 50% off every plan at
+ * checkout (the server charges and verifies the discounted price). Turn it off by
+ * removing the setting once the founding spots (REACHLY_FOUNDING_SPOTS, default 20)
+ * are taken; the site doesn't count them for you.
+ */
+export const FOUNDING = {
+  percent: Math.min(90, Math.max(0, Math.round(Number(process.env.REACHLY_FOUNDING_DISCOUNT) || 0))),
+  spots: Math.max(1, Math.round(Number(process.env.REACHLY_FOUNDING_SPOTS) || 20)),
+};
+const charged = (list: number) => (FOUNDING.percent ? Math.round(list * (100 - FOUNDING.percent)) / 100 : list);
+
 export const TIERS: Record<TierId, Tier> = {
   starter: {
     id: "starter",
     name: "Starter",
-    price: Number(process.env.REACHLY_PRICE_STARTER_USD || 19),
+    price: charged(Number(process.env.REACHLY_PRICE_STARTER_USD || 19)),
+    listPrice: Number(process.env.REACHLY_PRICE_STARTER_USD || 19),
     blurb: "For testing a new audience",
     accounts: 8,
     peoplePerAccount: 1,
@@ -35,7 +49,8 @@ export const TIERS: Record<TierId, Tier> = {
   pro: {
     id: "pro",
     name: "Pro",
-    price: Number(process.env.REACHLY_PRICE_PRO_USD || 49),
+    price: charged(Number(process.env.REACHLY_PRICE_PRO_USD || 49)),
+    listPrice: Number(process.env.REACHLY_PRICE_PRO_USD || 49),
     blurb: "For running a full campaign",
     accounts: 20,
     peoplePerAccount: 2,
@@ -51,7 +66,8 @@ export const isTier = (t: unknown): t is TierId => t === "starter" || t === "pro
 export const SOCIAL = {
   id: "social",
   name: "Social growth plan",
-  price: Number(process.env.REACHLY_PRICE_SOCIAL_USD || 9),
+  price: charged(Number(process.env.REACHLY_PRICE_SOCIAL_USD || 9)),
+  listPrice: Number(process.env.REACHLY_PRICE_SOCIAL_USD || 9),
   days: 30,
   features: [
     "Rewritten bio for every account",

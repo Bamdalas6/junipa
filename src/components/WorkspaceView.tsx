@@ -34,6 +34,7 @@ import { useRuns, type RunState } from "@/lib/useRun";
 import { clearPendingCheckout, pendingCheckout } from "@/lib/pending-pay";
 import { MarketPicker, marketLabel } from "./MarketPicker";
 import { Paywall } from "./Paywall";
+import { TestimonialAsk } from "./TestimonialAsk";
 import { ThemeToggle } from "./ThemeToggle";
 import type { Market } from "@/lib/geo";
 import { Activity, EditableText, LogRow, RerunButton, Section, StatusIcon, TagList, type StepStatus } from "./parts";
@@ -645,6 +646,8 @@ export default function WorkspaceView({
               )}
             </Section>
           )}
+
+          {step === "outreach" && unlocked && seg && ws.outreach[seg.id] && <TestimonialAsk domain={ws.domain} brand={ws.profile?.name ?? ws.domain} />}
 
           <StepNav
             step={step}
