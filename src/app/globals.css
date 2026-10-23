@@ -1,0 +1,442 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body), sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-ink: #0b0b0f;
+  --color-ink-2: #3f3f46;
+  --color-muted: #71717a;
+  --color-faint: #a1a1aa;
+  --color-line: #ebebee;
+  --color-line-2: #dcdce1;
+  --color-subtle: #fafafa;
+  --color-paper: #f5f5f7;
+  --color-card: #ffffff;
+  --color-white: #ffffff;
+
+  --color-accent: #4f46e5;
+  --color-accent-2: #6366f1;
+  --color-accent-soft: #eef0ff;
+  --color-good: #16a34a;
+  --color-good-soft: #ecfdf3;
+  --color-warn: #d97706;
+  --color-warn-soft: #fff8eb;
+  --color-bad: #dc2626;
+  --color-bad-soft: #fef2f2;
+  --color-info: #0284c7;
+  --color-info-soft: #f0f9ff;
+  --color-pink: #db2777;
+  --color-pink-soft: #fdf2f8;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-feature-settings: "cv11", "ss01";
+}
+
+::selection {
+  background: #c7d2fe;
+}
+
+/* Surfaces */
+@utility card {
+  background: var(--color-white);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.04),
+    0 1px 1px rgb(16 24 40 / 0.02);
+}
+@utility card-raised {
+  background: var(--color-white);
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 0.04),
+    0 12px 32px -12px rgb(16 24 40 / 0.14);
+}
+
+/* Faint engineering grid, faded at the edges */
+.grid-bg {
+  background-image:
+    linear-gradient(to right, #0b0b0f0a 1px, transparent 1px),
+    linear-gradient(to bottom, #0b0b0f0a 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-subtle) 0%, var(--color-white) 50%, var(--color-subtle) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.3s linear infinite;
+  border-radius: 8px;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
+
+@keyframes ping-soft {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.ping-soft {
+  animation: ping-soft 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Data flowing along connector lines */
+@keyframes flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.flow {
+  stroke-dasharray: 4 8;
+  animation: flow 1s linear infinite;
+}
+
+/* Same idea for plain lines: dashes travelling left to right */
+@keyframes flowx {
+  to {
+    background-position: 24px 0;
+  }
+}
+.flow-line {
+  background: repeating-linear-gradient(90deg, #4f46e5 0 6px, #c7d2fe 6px 12px);
+  background-size: 24px 2px;
+  animation: flowx 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes caret {
+  50% {
+    opacity: 0;
+  }
+}
+.caret {
+  animation: caret 1s steps(1) infinite;
+}
+
+.scroll-thin::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-line-2);
+  border-radius: 99px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .skeleton,
+  .pulse-dot,
+  .ping-soft,
+  .float,
+  .flow,
+  .flow-line,
+  .spin,
+  .caret {
+    animation: none;
+  }
+}
+
+/* ---------- Landing page: design-canvas style, built live by agent cursors ---------- */
+
+.lp {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jb), ui-monospace, "SF Mono", Menlo, monospace;
+  --color-ink: #121417;
+  --color-ink-2: #3a3e45;
+  --color-muted: #62666d;
+  --color-faint: #8a8f98;
+  --color-line: #e6e8eb;
+  --color-line-2: #d9dce1;
+  --color-subtle: #f1f3f5;
+  --color-accent: #4c5bd4;
+  --color-accent-2: #5b69e0;
+  --color-accent-soft: #eef0fc;
+  --color-paper: #f8f9fa;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+}
+.lp ::selection {
+  background: #0d99ff47;
+}
+
+/* Elements wait, hidden, until an agent cursor builds them. */
+.lp [data-b] {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+.lp-build .lp [data-b]:not([data-shown]) {
+  opacity: 0;
+}
+.lp-build .lp [data-b][data-kind="box"]:not([data-shown]) {
+  transform: translateY(4px);
+}
+/* If the builder never starts (script error), show everything anyway. */
+.lp-build:not(.lp-running) .lp [data-b]:not([data-shown]) {
+  animation: lp-failsafe 0s linear 4s forwards;
+}
+@keyframes lp-failsafe {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.lp-caret {
+  display: inline-block;
+  width: 0;
+  height: 0.95em;
+  margin-right: -2px;
+  border-left: 2px solid currentColor;
+  vertical-align: -0.1em;
+  animation: lp-blink 1s steps(1) infinite;
+}
+@keyframes lp-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.lp-cursor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform;
+  transition-property: transform, opacity;
+}
+.lp-cursor svg {
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.28));
+}
+.lp-cursor .i-text {
+  display: none;
+}
+.lp-cursor[data-icon="text"] .i-text {
+  display: block;
+}
+.lp-cursor[data-icon="text"] .i-arrow {
+  display: none;
+}
+
+/* Code lines appear one by one once their panel is built. */
+.lp-build .lp [data-shown] .lp-code-line {
+  opacity: 0;
+  animation: lp-line 0.25s ease forwards;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@keyframes lp-line {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-caret,
+  .lp-code-line {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* ---------- App screens (workspace, social): the landing's canvas look, without the build animation ---------- */
+
+.lp-app {
+  --color-paper: #eceef1;
+}
+.lp-app .card {
+  border-radius: 10px;
+  box-shadow: none;
+}
+.lp-app .card-raised {
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgb(18 20 23 / 0.04);
+}
+/* Floating menus (market, industry) keep a soft lift so they read above the page. */
+.lp-app [role="listbox"].card-raised,
+.lp-app .absolute.card-raised {
+  box-shadow:
+    0 1px 2px rgb(18 20 23 / 0.06),
+    0 16px 36px -18px rgb(18 20 23 / 0.28);
+}
+.lp-app .flow-line {
+  background: repeating-linear-gradient(90deg, var(--color-accent) 0 6px, color-mix(in srgb, var(--color-accent) 30%, transparent) 6px 12px);
+  background-size: 24px 2px;
+}
+.lp-app .skeleton {
+  background: linear-gradient(90deg, var(--color-subtle) 0%, var(--color-white) 50%, var(--color-subtle) 100%);
+  background-size: 200% 100%;
+}
+
+/* Flock: cursors fly unnamed; agent labels appear once they start building. */
+.lp-label {
+  transition: opacity 0.3s ease;
+}
+[data-flock] .lp-label {
+  opacity: 0;
+}
+
+/* Sticky landing header: slides down to sit under the rulers while agents build. */
+.lp-nav {
+  top: 0;
+  transition: top 0.25s ease;
+}
+@media (min-width: 768px) {
+  html[data-rulers] .lp-nav {
+    top: 20px;
+  }
+}
+
+/* ---------- Dark theme ----------
+   Light is the default. Dark follows the system setting unless the visitor picks a theme
+   with the switch (stored as data-theme on <html> before first paint). Every surface uses
+   these tokens; only the always-dark panels (code, agent console) keep fixed colours. */
+:root {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"],
+:root[data-theme="dark"] .lp {
+  --color-white: #16181c;
+  --color-card: #16181c;
+  --color-paper: #0d0e10;
+  --color-ink: #eceef1;
+  --color-ink-2: #c3c7ce;
+  --color-muted: #9aa0a9;
+  --color-faint: #707680;
+  --color-line: #25282e;
+  --color-line-2: #33373e;
+  --color-subtle: #1c1f24;
+  --color-accent: #8692f2;
+  --color-accent-2: #9ea8f5;
+  --color-accent-soft: #1e2240;
+  --color-good: #3ccf7f;
+  --color-good-soft: #10291c;
+  --color-warn: #f2a93b;
+  --color-warn-soft: #2c2112;
+  --color-bad: #f46b6b;
+  --color-bad-soft: #2e1616;
+  --color-info: #4db8f0;
+  --color-info-soft: #0f2433;
+  --color-pink: #f06aa8;
+  --color-pink-soft: #2c1424;
+}
+:root[data-theme="dark"] .lp-app {
+  --color-paper: #0a0b0d;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]),
+  :root:not([data-theme="light"]) .lp {
+    --color-white: #16181c;
+    --color-card: #16181c;
+    --color-paper: #0d0e10;
+    --color-ink: #eceef1;
+    --color-ink-2: #c3c7ce;
+    --color-muted: #9aa0a9;
+    --color-faint: #707680;
+    --color-line: #25282e;
+    --color-line-2: #33373e;
+    --color-subtle: #1c1f24;
+    --color-accent: #8692f2;
+    --color-accent-2: #9ea8f5;
+    --color-accent-soft: #1e2240;
+    --color-good: #3ccf7f;
+    --color-good-soft: #10291c;
+    --color-warn: #f2a93b;
+    --color-warn-soft: #2c2112;
+    --color-bad: #f46b6b;
+    --color-bad-soft: #2e1616;
+    --color-info: #4db8f0;
+    --color-info-soft: #0f2433;
+    --color-pink: #f06aa8;
+    --color-pink-soft: #2c1424;
+  }
+  :root:not([data-theme="light"]) .lp-app {
+    --color-paper: #0a0b0d;
+  }
+}
+/* The always-dark panels get a hairline so they still read as panels on a dark page. */
+:root[data-theme="dark"] .lp .bg-\[\#121417\] {
+  box-shadow: 0 0 0 1px #ffffff14;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lp .bg-\[\#121417\] {
+    box-shadow: 0 0 0 1px #ffffff14;
+  }
+}
+
