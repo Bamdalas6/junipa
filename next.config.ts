@@ -1,4 +1,10 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
+
+// In `next dev`, give the app the same Cloudflare bindings as production (the D1
+// database is a local SQLite file under .wrangler/).
+// It does nothing outside `next dev`.
+initOpenNextCloudflareForDev();
 
 const dev = process.env.NODE_ENV !== "production";
 

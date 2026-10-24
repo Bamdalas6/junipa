@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Inter, JetBrains_Mono, Poppins, Unbounded } from "next/font/google";
+import { AuthProvider } from "@/components/Auth";
 import "./globals.css";
 
 const body = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
@@ -24,7 +25,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: BUILD_BOOT }} />
       </head>
-      <body className="min-h-dvh font-sans">{children}</body>
+      <body className="min-h-dvh font-sans">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

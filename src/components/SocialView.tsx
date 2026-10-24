@@ -12,6 +12,7 @@ import { useRuns } from "@/lib/useRun";
 import { IndustryPicker } from "./CommandBar";
 import { usePayConfig, usd } from "./Paywall";
 import { MarketPicker } from "./MarketPicker";
+import { AccountButton } from "./Auth";
 import { ThemeToggle } from "./ThemeToggle";
 import { Activity } from "./parts";
 import { Button, CopyButton, Instagram, Linkedin, Logo } from "./ui";
@@ -281,6 +282,7 @@ export default function SocialView({
           </nav>
           <span className="flex-1" />
           <ThemeToggle />
+          <AccountButton signInClassName="max-sm:hidden" />
           <Link href="/" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line-2 bg-white px-4 text-[14px] font-semibold hover:border-ink/30">
             <ArrowLeft className="size-3.5" /> Home
           </Link>

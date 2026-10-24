@@ -84,6 +84,13 @@ export function rateLimit(request: Request, name: string, limit: number, windowM
   return Response.json({ error: "Too many requests. Wait a little and try again." }, { status: 429, headers: { "Retry-After": String(retry) } });
 }
 
+/** Like rateLimit, but counted per `key` (e.g. an account) rather than per visitor. */
+export function rateLimitKey(name: string, key: string, limit: number, windowMs: number): Response | null {
+  const retry = hit(`${name}:${key}`, limit, windowMs, Date.now());
+  if (!retry) return null;
+  return Response.json({ error: "Too many tries. Wait a little and try again." }, { status: 429, headers: { "Retry-After": String(retry) } });
+}
+
 const GLOBAL_FACTOR = Math.max(1, Number(process.env.REACHLY_GLOBAL_RATE_FACTOR) || 10);
 
 /* ---------- Input clipping ---------- */

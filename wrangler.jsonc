@@ -14,6 +14,15 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  // Accounts, sessions and saved workspaces (tables are created on first use).
+  // The code reads it as env.DB, so keep the binding name.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "junia-db",
+      "database_id": "dcfd77d1-a47a-496c-9d46-43316a344f01"
+    }
+  ],
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",

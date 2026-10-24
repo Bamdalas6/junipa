@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { B, BuildCanvas } from "@/components/Build";
+import { AccountButton, useAuth } from "@/components/Auth";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CommandBar, DetectNote, useIndustryDetection } from "@/components/CommandBar";
 import { MarketPicker } from "@/components/MarketPicker";
@@ -13,6 +14,7 @@ import { Badge, Favicon, Logo } from "@/components/ui";
 import type { Market } from "@/lib/geo";
 import { INDUSTRIES, getIndustry } from "@/lib/industries";
 import { PLATFORMS, parseHandle } from "@/lib/social-shared";
+import { deleteCloudWorkspaces, listCloudWorkspaces } from "@/lib/cloud";
 import { cleanDomain, clearAllWorkspaces, listWorkspaces, type WorkspaceSummary } from "@/lib/store";
 import { SAMPLE_TESTIMONIALS, TESTIMONIALS, type Testimonial } from "@/lib/testimonials";
 
@@ -40,7 +42,18 @@ export default function Home() {
   const heroBarRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => setRecent(listWorkspaces()), []);
+  const { user, open: openAuth } = useAuth();
+  // This browser's workspaces, plus the account's when signed in (newest copy of each).
+  useEffect(() => {
+    const local = listWorkspaces();
+    setRecent(local);
+    if (!user) return;
+    listCloudWorkspaces().then((cloud) => {
+      const byDomain = new Map(local.map((w) => [w.domain, w]));
+      for (const w of cloud) if ((byDomain.get(w.domain)?.updatedAt ?? 0) < w.updatedAt) byDomain.set(w.domain, w);
+      setRecent([...byDomain.values()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 30));
+    });
+  }, [user]);
 
   const { state: detect, detectNow } = useIndustryDetection(domain, (r) => {
     // A manual pick wins over detection.
@@ -179,8 +192,18 @@ export default function Home() {
             </B>
             <B className="flex items-center gap-2 justify-self-end">
               <ThemeToggle />
-              <a href="#start" onClick={focusInput} className="inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-ink px-4 text-[14.5px] font-semibold text-white hover:bg-ink-2 sm:px-6">
-                Get started
+              <AccountButton signInClassName="max-sm:hidden" />
+              {/* Signed out: create an account. Signed in: straight to the website box. */}
+              <a
+                href="#start"
+                onClick={(e) => {
+                  if (user) return focusInput();
+                  e.preventDefault();
+                  openAuth({ mode: "signup", onDone: () => (document.getElementById("start")?.scrollIntoView({ behavior: "smooth" }), focusInput()) });
+                }}
+                className="inline-flex h-10 items-center whitespace-nowrap rounded-lg bg-ink px-4 text-[14.5px] font-semibold text-white hover:bg-ink-2 sm:px-6"
+              >
+                {user ? "New search" : "Get started"}
               </a>
             </B>
           </div>
@@ -388,8 +411,9 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (!confirm(`Delete all ${recent.length} saved searches from this browser? Each website will be researched fresh next time.`)) return;
+                    if (!confirm(`Delete all ${recent.length} saved searches${user ? " from your account and this browser" : " from this browser"}? Each website will be researched fresh next time.`)) return;
                     clearAllWorkspaces();
+                    if (user) deleteCloudWorkspaces();
                     setRecent([]);
                   }}
                   className="font-mono text-[12px] text-muted hover:text-bad"

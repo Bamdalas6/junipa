@@ -34,15 +34,15 @@ Deploy from GitHub, not from your computer: a local build copies `.env.local` (y
 
 1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Import a repository** → pick this repo.
 2. Project name `junipa` (it must match `name` in `wrangler.jsonc`). Build command `npx opennextjs-cloudflare build`, deploy command `npx opennextjs-cloudflare deploy`.
-3. Worker → **Settings** → **Variables and Secrets**, add as secrets: `GEMINI_API_KEY`, `TAVILY_API_KEY`, `REACHLY_SIGNING_SECRET` (a new long random string), `REACHLY_PUBLIC_URL` (the site's https address), and `BACHS_SECRET_KEY` (a **live** key: a sandbox key turns payments off in production). Optional: `HUNTER_API_KEY`, prices and the founding offer from `.env.example`. Don't set `BACHS_RETURN_URL`.
-4. `NEXT_PUBLIC_FEEDBACK_EMAIL` is read when the site is built, so add it under the build's variables, not the Worker's.
-5. Recommended: a **WAF rate limiting rule** on `/api/run` and `/api/social` (Security → WAF). The app's own limits are per Worker instance, so they're weaker on Cloudflare.
+3. Accounts need a D1 database: **Storage & Databases** → **D1** → **Create**, name `junia-db`, and put its ID in `wrangler.jsonc` (`d1_databases`). Tables are created on first use.
+4. Worker → **Settings** → **Variables and Secrets**, add as secrets: `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Google sign-in (optional; redirect URI `https://<your site>/api/auth/google/callback`), and `GEMINI_API_KEY`, `TAVILY_API_KEY`, `REACHLY_SIGNING_SECRET` (a new long random string), `REACHLY_PUBLIC_URL` (the site's https address), and `BACHS_SECRET_KEY` (a **live** key: a sandbox key turns payments off in production). Optional: `HUNTER_API_KEY`, prices and the founding offer from `.env.example`. Don't set `BACHS_RETURN_URL`.
+5. `NEXT_PUBLIC_FEEDBACK_EMAIL` is read when the site is built, so add it under the build's variables, not the Worker's.
+6. Recommended: a **WAF rate limiting rule** on `/api/run`, `/api/social` and `/api/auth/*` (Security → WAF). The app's own limits are per Worker instance, so they're weaker on Cloudflare.
 
 Test the Workers build locally: `npm run preview` (reads keys from `.dev.vars`).
 
 ## Before launching as a paid SaaS
 
-- Accounts and a database (replace `store.ts`), e.g. Supabase
 - Billing and usage limits per plan (each live step costs real API spend)
 - Rate limiting on `/api/run`
 - Sending from the app (email provider, WhatsApp Business API) and reply tracking

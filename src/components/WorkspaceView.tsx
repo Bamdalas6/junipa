@@ -25,16 +25,18 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getIndustry } from "@/lib/industries";
 import { handlesFromUrls } from "@/lib/social-shared";
 import type { Account, Competitors, Contact, Contacts, Outreach, Profile, RunRequest, Segment, Segments } from "@/lib/schema";
+import { deleteCloudWorkspaces, newer, pullWorkspace, pushWorkspace } from "@/lib/cloud";
 import { deleteWorkspace, loadWorkspace, newWorkspace, saveWorkspace, type Workspace } from "@/lib/store";
 import { useRuns, type RunState } from "@/lib/useRun";
 import { clearPendingCheckout, pendingCheckout } from "@/lib/pending-pay";
 import { MarketPicker, marketLabel } from "./MarketPicker";
 import { Paywall } from "./Paywall";
 import { TestimonialAsk } from "./TestimonialAsk";
+import { AccountButton, useAuth } from "./Auth";
 import { ThemeToggle } from "./ThemeToggle";
 import type { Market } from "@/lib/geo";
 import { Activity, EditableText, LogRow, RerunButton, Section, StatusIcon, TagList, type StepStatus } from "./parts";
@@ -72,6 +74,8 @@ export default function WorkspaceView({
   const { run, get, reset, runs } = useRuns();
   const [step, setStep] = useState<StepId>(STEP_IDS.includes(initialStep as StepId) ? (initialStep as StepId) : "brand");
   const [payNote, setPayNote] = useState<"" | "verifying" | "paid" | "failed">("");
+  const { user, ready: authReady, open: openAuth } = useAuth();
+  const signedIn = !!user;
 
   // One step per screen; the step lives in the URL so refresh and back work.
   const goto = useCallback((next: StepId) => {
@@ -84,16 +88,21 @@ export default function WorkspaceView({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
-  // Boot: learn whether the server runs live research, then load or create the workspace.
+  // Boot: learn whether the server runs live research, then load or create the workspace
+  // (the newer of this browser's copy and the account's, when signed in).
   useEffect(() => {
+    if (!authReady) return;
     let cancelled = false;
-    fetch("/api/status")
-      .then((r) => r.json())
-      .catch(() => ({ live: false }))
-      .then((s: { live: boolean }) => {
+    Promise.all([
+      fetch("/api/status")
+        .then((r) => r.json())
+        .catch(() => ({ live: false })),
+      signedIn ? pullWorkspace(domain) : Promise.resolve(null),
+    ])
+      .then(([s, cloud]: [{ live: boolean }, Workspace | null]) => {
         if (cancelled) return;
         setLive(s.live);
-        const stored = loadWorkspace(domain);
+        const stored = newer(loadWorkspace(domain), cloud);
         if (stored && market && JSON.stringify(market) !== JSON.stringify(stored.market ?? null)) {
           // A new market was picked on the landing page: keep the brand profile, redo market research.
           setWs({ ...stored, market, competitors: undefined, segments: undefined, selected: [], accounts: {}, picked: {}, contacts: {}, outreach: {} });
@@ -108,11 +117,15 @@ export default function WorkspaceView({
     return () => {
       cancelled = true;
     };
-  }, [domain, industry, goal, demo]);
+    // Signing in later doesn't reload the workspace; its changes are pushed from here on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [domain, industry, goal, demo, authReady]);
 
   useEffect(() => {
-    if (ws) saveWorkspace(ws);
-  }, [ws]);
+    if (!ws) return;
+    saveWorkspace(ws);
+    if (signedIn) pushWorkspace(ws);
+  }, [ws, signedIn]);
 
   const update = useCallback((fn: (w: Workspace) => Workspace) => setWs((w) => (w ? fn(w) : w)), []);
 
@@ -164,18 +177,30 @@ export default function WorkspaceView({
     [base, ws, run, update],
   );
 
-  // Steps 1-3 run on their own, one after another.
+  // Steps 1-3 run on their own, one after another. The brand profile is free to try;
+  // after it, a free account is needed (the server enforces this too).
   const profileRun = get("profile");
   const compRun = get("competitors");
   const segRun = get("segments");
+  const needsAccount = !!ws && !ws.demo && authReady && !signedIn;
+  const askAccount = useCallback(
+    () => openAuth({ mode: "signup", reason: "Your brand profile is ready. Create a free account to see your competitors, audiences and prospects. It takes a few seconds." }),
+    [openAuth],
+  );
+  const asked = useRef(false);
   useEffect(() => {
     if (!ws) return;
     if (!ws.profile) {
       if (profileRun.status === "idle") runProfile();
+    } else if (needsAccount) {
+      if (!asked.current && !ws.competitors) {
+        asked.current = true;
+        askAccount();
+      }
     } else if (!ws.competitors) {
       if (compRun.status === "idle") runCompetitors();
     } else if (!ws.segments && segRun.status === "idle") runSegments();
-  }, [ws, profileRun.status, compRun.status, segRun.status, runProfile, runCompetitors, runSegments]);
+  }, [ws, needsAccount, askAccount, profileRun.status, compRun.status, segRun.status, runProfile, runCompetitors, runSegments]);
 
   const allSegs = useMemo(() => ws?.segments?.segments ?? [], [ws?.segments]);
   const selectedSegs = useMemo(() => allSegs.filter((s) => ws?.selected.includes(s.id)), [allSegs, ws?.selected]);
@@ -326,6 +351,7 @@ export default function WorkspaceView({
             )}
           </span>
           <ThemeToggle className="size-8" />
+          <AccountButton signInClassName="max-sm:hidden" />
           {ws.demo ? (
             <Badge tone="warn" dot>
               Demo data
@@ -411,6 +437,7 @@ export default function WorkspaceView({
                 onClick={() => {
                   if (confirm(`Delete the research for ${ws.domain}?`)) {
                     deleteWorkspace(ws.domain);
+                    if (signedIn) deleteCloudWorkspaces(ws.domain);
                     router.push("/");
                   }
                 }}
@@ -504,6 +531,11 @@ export default function WorkspaceView({
             <Section id="brand" n={1} title="Brand profile" subtitle={ws.profile?.oneLiner ?? `Reading ${ws.domain} and its socials`} status={s1} meta={dur("profile")} actions={ws.profile && <RerunButton onClick={runProfile} disabled={profileRun.status === "running"} />}>
               <Activity run={profileRun} onRetry={runProfile} label="is reading your website" />
               {ws.profile && profileRun.status !== "running" && <ProfileView p={ws.profile} growHref={socialHref(ws)} onChange={(profile) => update((w) => ({ ...w, profile }))} />}
+              {ws.profile && profileRun.status !== "running" && needsAccount && (
+                <div className="mt-5">
+                  <AccountNotice onClick={askAccount} />
+                </div>
+              )}
             </Section>
           )}
 
@@ -517,7 +549,8 @@ export default function WorkspaceView({
               meta={dur("competitors")}
               actions={ws.competitors && <RerunButton onClick={runCompetitors} disabled={compRun.status === "running"} />}
             >
-              {!ws.competitors && compRun.status === "idle" && <p className="text-[13.5px] text-muted">Starts as soon as the brand profile is ready.</p>}
+              {!ws.competitors && compRun.status === "idle" && needsAccount && ws.profile && <AccountNotice onClick={askAccount} />}
+              {!ws.competitors && compRun.status === "idle" && !(needsAccount && ws.profile) && <p className="text-[13.5px] text-muted">Starts as soon as the brand profile is ready.</p>}
               <Activity run={compRun} onRetry={runCompetitors} rows={4} label="is mapping competitors" />
               {ws.competitors && compRun.status !== "running" && (
                 <CompetitorsView c={ws.competitors} onRemove={(i) => update((w) => ({ ...w, competitors: w.competitors && { ...w.competitors, competitors: w.competitors.competitors.filter((_, j) => j !== i) } }))} />
@@ -1525,4 +1558,16 @@ function exportCsv(ws: Workspace) {
   link.download = `junia-${ws.domain}-leads.csv`;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+/** Shown in place of the next steps while a visitor without an account looks at their free brand profile. */
+function AccountNotice({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-[10px] border border-line bg-white p-4 sm:flex-row sm:items-center">
+      <p className="flex-1 text-[14px] text-ink-2">Create a free account to see your competitors, audiences and prospects. Your research is saved to it, on any device.</p>
+      <Button variant="primary" onClick={onClick}>
+        Create free account
+      </Button>
+    </div>
+  );
 }
