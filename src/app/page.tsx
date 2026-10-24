@@ -178,13 +178,14 @@ export default function Home() {
           <div className="mx-auto h-full max-w-[1180px] border-x border-line" />
         </div>
         <header className="lp-nav sticky z-40 border-y border-line bg-paper/90 backdrop-blur-md">
-          <div ref={frameRef} className="mx-auto grid h-16 max-w-[1180px] grid-cols-[1fr_auto_1fr] items-center border-x border-line px-5 sm:px-8">
+          {/* Phones and tablets: logo left, controls right. Desktop: links centred between them. */}
+          <div ref={frameRef} className="mx-auto flex h-16 max-w-[1180px] items-center justify-between gap-3 border-x border-line px-4 sm:px-8 lg:grid lg:grid-cols-[1fr_auto_1fr]">
             <B className="justify-self-start">
               <a href="#start" aria-label="Junia home">
                 <Logo large />
               </a>
             </B>
-            <B as="nav" className="hidden items-center gap-12 text-[14px] font-medium md:flex">
+            <B as="nav" className="hidden items-center gap-8 whitespace-nowrap text-[14px] font-medium lg:flex xl:gap-12">
               <a href="#pipeline" className="hover:text-accent">Pipeline</a>
               <a href="#pricing" className="hover:text-accent">Pricing</a>
               <a href="#how" className="hover:text-accent">How it works</a>
@@ -297,7 +298,8 @@ export default function Home() {
               Built for teams in
             </B>
             {INDUSTRIES.filter((i) => i.id !== "other").map((i) => (
-              <div key={i.id} className="flex items-center justify-center border-l border-t border-line px-3 py-6 lg:border-t-0">
+              // 7 industries: on 2 and 4 columns the last one fills the row instead of leaving a gap.
+              <div key={i.id} className="flex items-center justify-center border-l border-t border-line px-3 py-6 max-lg:last:col-span-2 lg:border-t-0">
                 <B className="text-[16px] font-semibold tracking-[-0.01em] sm:text-[17px]">{i.short}</B>
               </div>
             ))}

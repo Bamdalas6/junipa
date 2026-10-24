@@ -327,7 +327,7 @@ export default function WorkspaceView({
           <Link href="/" aria-label="Home">
             <Logo compact />
           </Link>
-          <span className="text-line-2">/</span>
+          <span className="text-line-2 max-sm:hidden">/</span>
           <span className="flex min-w-0 items-center gap-2 text-sm">
             <Favicon domain={ws.domain} name={ws.profile?.name ?? ws.domain} size={20} />
             <span className="truncate font-medium">{ws.profile?.name ?? ws.domain}</span>
@@ -352,15 +352,18 @@ export default function WorkspaceView({
           </span>
           <ThemeToggle className="size-8" />
           <AccountButton signInClassName="max-sm:hidden" />
-          {ws.demo ? (
-            <Badge tone="warn" dot>
-              Demo data
-            </Badge>
-          ) : (
-            <Badge tone="good" dot>
-              Live
-            </Badge>
-          )}
+          {/* Phones: the demo banner and step status already say this; give the brand name the room. */}
+          <span className="max-sm:hidden">
+            {ws.demo ? (
+              <Badge tone="warn" dot>
+                Demo data
+              </Badge>
+            ) : (
+              <Badge tone="good" dot>
+                Live
+              </Badge>
+            )}
+          </span>
           <Button variant="secondary" size="sm" disabled={leadCount === 0} onClick={() => exportCsv(ws)}>
             <Download className="size-3.5" /> <span className="hidden sm:inline">Export</span>
           </Button>
@@ -503,7 +506,10 @@ export default function WorkspaceView({
             <Kpi label="Decision makers" value={leadCount} sub={leadCount ? `${verified} with email` : undefined} icon={BadgeCheck} />
           </div>
 
-          <PipelineGraph steps={steps} current={step} avail={avail} locked={!unlocked} onGo={goto} />
+          {/* Phones have the step tabs in the top bar; the diagram would only scroll sideways there. */}
+          <div className="max-sm:hidden">
+            <PipelineGraph steps={steps} current={step} avail={avail} locked={!unlocked} onGo={goto} />
+          </div>
 
           {payNote === "verifying" && <Notice tone="accent">Confirming your payment…</Notice>}
           {payNote === "paid" && <Notice tone="good">Payment confirmed. Decision makers and outreach are unlocked for this workspace.</Notice>}
@@ -812,14 +818,17 @@ function StepNav({
         <span />
       )}
       <span className="flex-1 text-center font-mono text-[11px] text-faint">
-        Step {STEP_IDS.indexOf(step) + 1} of {STEP_IDS.length}
+        <span className="max-sm:hidden">
+          Step {STEP_IDS.indexOf(step) + 1} of {STEP_IDS.length}
+        </span>
       </span>
       {next && (
-        <Button variant="primary" onClick={next.onClick} disabled={next.disabled}>
-          {next.icon === "lock" && <Lock className="size-3.5" />}
-          {next.icon === "done" && <CheckCircle2 className="size-3.5" />}
-          {next.label}
-          {!next.icon && <ArrowRight className="size-3.5" />}
+        // On the smallest phones the label shortens rather than pushing the button off screen.
+        <Button variant="primary" onClick={next.onClick} disabled={next.disabled} className="min-w-0 shrink!">
+          {next.icon === "lock" && <Lock className="size-3.5 shrink-0" />}
+          {next.icon === "done" && <CheckCircle2 className="size-3.5 shrink-0" />}
+          <span className="truncate">{next.label}</span>
+          {!next.icon && <ArrowRight className="size-3.5 shrink-0" />}
         </Button>
       )}
     </div>
@@ -1043,8 +1052,38 @@ function CompetitorsView({ c, onRemove }: { c: Competitors; onRemove: (i: number
           <p className="mt-1 text-[13.5px] text-ink">{c.whitespace}</p>
         </div>
       </div>
-      <div className="scroll-thin overflow-x-auto rounded-[10px] border border-line">
-        <table className="w-full min-w-[720px] text-left text-[13px]">
+      {/* Phones and tablets: one card per competitor. */}
+      <ul className="overflow-hidden rounded-[10px] border border-line lg:hidden">
+        {rows.map((x) => (
+          <li key={x.name} className="border-b border-line px-3.5 py-3 last:border-0">
+            <div className="flex items-start gap-2.5">
+              <Favicon domain={x.domain} name={x.name} size={24} />
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{x.name}</p>
+                <p className="text-[12px] text-muted">
+                  {x.location}
+                  {x.priceTier && x.priceTier !== "unknown" ? ` · ${x.priceTier}` : ""}
+                </p>
+              </div>
+              <Badge tone={x.threat === "high" ? "bad" : x.threat === "medium" ? "warn" : "plain"} dot>
+                {x.threat}
+              </Badge>
+              <button onClick={() => onRemove(x.i)} className="-mr-1 grid size-8 shrink-0 place-items-center rounded-md text-faint hover:bg-white hover:text-bad" aria-label={`Remove ${x.name}`} title="Not a competitor">
+                <X className="size-3.5" />
+              </button>
+            </div>
+            <p className="mt-2 text-[13px] text-ink-2">{x.positioning}</p>
+            <p className="mt-0.5 text-[12px] text-muted">{x.overlap}</p>
+            {!x.domain.endsWith(".example") && (
+              <a href={safeHref(x.domain)} target="_blank" rel="noreferrer" className="mt-1.5 inline-block font-mono text-[11.5px] text-muted hover:text-accent">
+                {x.domain}
+              </a>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="scroll-thin hidden overflow-x-auto rounded-[10px] border border-line lg:block">
+        <table className="w-full min-w-[640px] text-left text-[13px]">
           <thead className="bg-subtle text-[11px] text-muted">
             <tr className="border-b border-line">
               <th className="px-3 py-2 font-medium">Company</th>
@@ -1251,8 +1290,52 @@ function AccountsView({
           {picked.length} of {accounts.length} selected
         </span>
       </div>
-      <div className="scroll-thin overflow-x-auto rounded-[10px] border border-line">
-        <table className="w-full min-w-[760px] text-left text-[13px]">
+      {/* Phones and tablets: one tappable card per account. */}
+      <ul className="overflow-hidden rounded-[10px] border border-line lg:hidden">
+        {accounts.map((a) => {
+          const on = set.has(a.name);
+          const site = a.website && !a.website.endsWith(".example") ? safeHref(a.website) : undefined;
+          return (
+            <li key={a.name} className={`border-b border-line last:border-0 ${on ? "bg-white" : "bg-subtle/50 text-muted"}`}>
+              <label className="flex cursor-pointer items-start gap-3 px-3.5 py-3">
+                <input type="checkbox" checked={on} onChange={() => toggle(a.name)} aria-label={`Select ${a.name}`} className="mt-1.5 size-4 shrink-0 accent-accent" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2.5">
+                    <Favicon domain={a.website} name={a.name} size={24} />
+                    <span className="min-w-0">
+                      <span className={`block font-medium ${on ? "text-ink" : ""}`}>{a.name}</span>
+                      <span className="block text-[11.5px] text-muted">
+                        {a.location}
+                        {a.size ? ` · ${a.size}` : ""}
+                      </span>
+                    </span>
+                  </span>
+                  {a.why && <span className="mt-2 block text-[13px] text-ink-2">{a.why}</span>}
+                  {a.signal && (
+                    <span className="mt-1.5 inline-flex items-start gap-1 rounded-md bg-warn-soft px-1.5 py-0.5 text-[12px] text-warn">
+                      <Zap className="mt-0.5 size-3 shrink-0" /> {a.signal}
+                    </span>
+                  )}
+                </span>
+                <span className="flex shrink-0 flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                  {igHandle(a.instagram) && !demo && (
+                    <a href={`https://instagram.com/${igHandle(a.instagram)}`} target="_blank" rel="noreferrer" className="grid size-8 place-items-center rounded-md text-muted hover:bg-paper hover:text-pink" aria-label={`${a.name} on Instagram`}>
+                      <Instagram className="size-4" />
+                    </a>
+                  )}
+                  {site && (
+                    <a href={site} target="_blank" rel="noreferrer" className="grid size-8 place-items-center rounded-md text-muted hover:bg-paper hover:text-ink" aria-label={`${a.name} website`}>
+                      <ExternalLink className="size-4" />
+                    </a>
+                  )}
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="scroll-thin hidden overflow-x-auto rounded-[10px] border border-line lg:block">
+        <table className="w-full min-w-[640px] text-left text-[13px]">
           <thead className="bg-subtle text-[11px] text-muted">
             <tr className="border-b border-line">
               <th className="w-10 px-3 py-2">

@@ -196,6 +196,15 @@ export function CommandBar({
 }) {
   const hero = variant === "hero";
   const clean = cleanDomain(domain);
+  // Narrow phones: a shorter placeholder that fits next to the pickers and Run.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const m = window.matchMedia("(max-width: 420px)");
+    const update = () => setNarrow(m.matches);
+    update();
+    m.addEventListener("change", update);
+    return () => m.removeEventListener("change", update);
+  }, []);
   const valid = VALID.test(clean);
   return (
     <form
@@ -213,7 +222,7 @@ export function CommandBar({
         value={domain}
         onChange={(e) => onDomain(e.target.value)}
         onPaste={onPaste}
-        placeholder="Website or social profile link"
+        placeholder={narrow ? "Website or link" : "Website or social link"}
         aria-label="Your website"
         inputMode="url"
         autoComplete="url"
@@ -225,7 +234,8 @@ export function CommandBar({
         </span>
       ) : (
         <>
-          {extra}
+          {/* Phones: the extra control (the dock's market picker) would squeeze the input; it's in the hero bar too. */}
+          {extra && <span className="max-sm:hidden">{extra}</span>}
           <IndustryPicker value={industry} onChange={onIndustry} auto={auto} compact={!hero} needsChoice={needsIndustry} openSignal={openIndustry} />
         </>
       )}
