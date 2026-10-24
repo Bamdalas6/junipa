@@ -672,6 +672,8 @@ function LockedPlan({ result, onUnlocked }: { result: Result; onUnlocked: (token
                   {busy ? <Loader2 className="spin size-4" /> : <Lock className="size-4" />} Unlock plan · {price}
                 </Button>
               </form>
+            ) : config && !config.testUnlock ? (
+              <p className="mt-8 rounded-lg border border-line bg-white p-3.5 text-[13.5px] text-ink-2">The full plan opens very soon. Your free summary and scores above are yours to keep.</p>
             ) : (
               <div className="mt-8 space-y-2.5">
                 <p className="rounded-lg border border-warn/25 bg-warn-soft p-3 text-[13px] text-ink-2">Payments are in test mode, so you can unlock for free.</p>

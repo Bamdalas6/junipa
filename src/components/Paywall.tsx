@@ -20,6 +20,8 @@ export interface Tier {
 
 export interface PayConfig {
   enabled: boolean;
+  /** Free test unlocks work (payments off, and on your own computer or switched on by hand). */
+  testUnlock?: boolean;
   provider?: "bachs" | "paystack" | null;
   founding?: { percent: number; spots: number } | null;
   currency: string;
@@ -185,6 +187,10 @@ export function Paywall({
               Pay {chosen ? usd(chosen.price) : ""} · {chosen?.name}
             </Button>
           </form>
+        ) : !demo && config && !config.testUnlock ? (
+          <p className="rounded-[10px] border border-line bg-white p-4 text-[14px] text-ink-2">
+            Decision makers and outreach open very soon. Your research so far is saved in this browser, so come back to pick up where you left off.
+          </p>
         ) : (
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <p className="flex-1 rounded-[10px] border border-warn/25 bg-warn-soft/70 p-3 text-[12.5px] text-ink-2">
