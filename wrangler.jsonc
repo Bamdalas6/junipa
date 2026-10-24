@@ -3,7 +3,7 @@
 // (Worker > Settings > Variables and Secrets) or with `npx wrangler secret put NAME`.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "junia",
+  "name": "junipa",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-01",
   // nodejs_compat: Node APIs (crypto, streams) for the Next.js server.
@@ -17,13 +17,11 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "junia"
+      "service": "junipa"
     }
   ],
-  // Research steps wait on several sites and searches; give each request room.
-  "limits": {
-    "cpu_ms": 60000
-  },
+  // No "limits" here: the Free plan rejects any CPU setting. On Workers Paid the
+  // default 30 s of CPU per request is plenty (research mostly waits on the network).
   "observability": {
     "enabled": true
   }

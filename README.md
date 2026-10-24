@@ -33,7 +33,7 @@ Built with [OpenNext](https://opennext.js.org/cloudflare) (`wrangler.jsonc`, `op
 Deploy from GitHub, not from your computer: a local build copies `.env.local` (your test keys) into the Worker, and OpenNext doesn't fully support building on Windows.
 
 1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Import a repository** → pick this repo.
-2. Project name `junia` (it must match `name` in `wrangler.jsonc`). Build command `npx opennextjs-cloudflare build`, deploy command `npx opennextjs-cloudflare deploy`.
+2. Project name `junipa` (it must match `name` in `wrangler.jsonc`). Build command `npx opennextjs-cloudflare build`, deploy command `npx opennextjs-cloudflare deploy`.
 3. Worker → **Settings** → **Variables and Secrets**, add as secrets: `GEMINI_API_KEY`, `TAVILY_API_KEY`, `REACHLY_SIGNING_SECRET` (a new long random string), `REACHLY_PUBLIC_URL` (the site's https address), and `BACHS_SECRET_KEY` (a **live** key: a sandbox key turns payments off in production). Optional: `HUNTER_API_KEY`, prices and the founding offer from `.env.example`. Don't set `BACHS_RETURN_URL`.
 4. `NEXT_PUBLIC_FEEDBACK_EMAIL` is read when the site is built, so add it under the build's variables, not the Worker's.
 5. Recommended: a **WAF rate limiting rule** on `/api/run` and `/api/social` (Security → WAF). The app's own limits are per Worker instance, so they're weaker on Cloudflare.
