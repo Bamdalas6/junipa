@@ -333,28 +333,140 @@ function cleanName(raw: string, domain: string) {
   return base.charAt(0).toUpperCase() + base.slice(1);
 }
 
-/** True when the site answers on a public address (bot-blocking 4xx still counts as live). */
-export async function siteIsLive(site: string): Promise<boolean> {
-  const host = site.replace(/^https?:\/\//, "").replace(/^www\./, "").split(/[/?#]/)[0].toLowerCase();
-  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) || host.endsWith(".example")) return false;
-  let url = new URL(`https://${host}`);
+/* ---------- Reading company sites, to check what research names ---------- */
+
+export interface SitePage {
+  /** ok: page read. blocked: the site answers but won't show a bot the page. dead: no website there. */
+  status: "ok" | "blocked" | "dead";
+  url: string;
+  title: string;
+  description: string;
+  /** Visible text, trimmed. */
+  text: string;
+  /** For sale, parked, or a holding page rather than a working business. */
+  parked: boolean;
+  placeholder: boolean;
+  /** Same-site links that usually list the people behind a business. */
+  teamLinks: string[];
+  country?: string;
+}
+
+const PARKED = /domain (name )?(is |may be )?for sale|buy this domain|this domain (is|may be) (for sale|available)|parked (free|domain)|domain parking|hugedomains|sedoparking|afternic|dan\.com\/|is available for purchase|get this domain/i;
+const PLACEHOLDER = /coming soon|under construction|opening soon|launching soon|enter (the )?store using password|password protected|be right back|website is (currently )?(under maintenance|unavailable)|account (has been )?suspended|site not found/i;
+const TEAM_LINK = /\b(about|team|people|founders?|leadership|our-story|story|who-we-are|company|management|meet)\b/i;
+
+function hostOf(site: string) {
+  return site.replace(/^https?:\/\//, "").replace(/^www\./, "").split(/[/?#]/)[0].toLowerCase();
+}
+
+function visibleText(html: string) {
+  return decode(
+    html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+      .replace(/<[^>]+>/g, " "),
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Reads a site's homepage so research can be checked against what is really there. */
+export async function readSite(site: string, opts: { maxText?: number } = {}): Promise<SitePage> {
+  const host = hostOf(site);
+  const empty: SitePage = { status: "dead", url: host ? `https://${host}` : "", title: "", description: "", text: "", parked: false, placeholder: false, teamLinks: [] };
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(host) || host.endsWith(".example")) return empty;
+  let page: { html: string; url: string };
   try {
-    for (let hop = 0; hop < 4; hop++) {
-      safeTarget(url);
-      await assertPublic(url.hostname);
-      const res = await fetch(url, { dispatcher: publicOnly, redirect: "manual", signal: AbortSignal.timeout(5000), headers: { "user-agent": "Mozilla/5.0 (compatible; JuniaBot/0.1)" } });
-      res.body?.cancel().catch(() => {});
-      const location = res.headers.get("location");
-      if (res.status >= 300 && res.status < 400 && location) {
-        url = new URL(location, url);
-        continue;
-      }
-      return res.status < 400 || [401, 403, 405, 429].includes(res.status);
+    page = await fetchHtml(`https://${host}`, 0, { browserLike: true, maxBytes: 600_000 });
+  } catch (e) {
+    const status = Number((e as { status?: unknown }).status) || 0;
+    // Bot walls (Cloudflare etc.) mean a real site we just can't read.
+    if ([401, 403, 405, 429, 503].includes(status)) return { ...empty, status: "blocked" };
+    try {
+      page = await fetchHtml(`http://${host}`, 0, { browserLike: true, maxBytes: 600_000 });
+    } catch {
+      return empty;
     }
-  } catch {
-    return false;
   }
-  return false;
+  const { html, url } = page;
+  const meta = (name: string) =>
+    pick(html, new RegExp(`<meta[^>]+(?:name|property)=["']${name}["'][^>]*content=["']([^"']*)["']`, "i")) ||
+    pick(html, new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:name|property)=["']${name}["']`, "i"));
+  const title = [pick(html, /<title[^>]*>([\s\S]*?)<\/title>/i), meta("og:site_name")].filter(Boolean).join(" | ").replace(/\s+/g, " ");
+  const description = meta("description") || meta("og:description");
+  const full = visibleText(html);
+  const head = `${title} ${description} ${full.slice(0, 3000)}`;
+  const base = new URL(url);
+  const teamLinks = [
+    ...new Set(
+      [...html.matchAll(/<a[^>]+href=["']([^"'#]+)["']/gi)]
+        .map((m) => {
+          try {
+            const u = new URL(decode(m[1]).trim(), base);
+            return hostOf(u.hostname) === hostOf(base.hostname) && /^https?:$/.test(u.protocol) && TEAM_LINK.test(u.pathname) ? `${u.origin}${u.pathname}` : "";
+          } catch {
+            return "";
+          }
+        })
+        .filter(Boolean),
+    ),
+  ].slice(0, 4);
+  return {
+    status: "ok",
+    url,
+    title: title.slice(0, 160),
+    description: decode(description).slice(0, 300),
+    text: full.slice(0, opts.maxText ?? 2500),
+    parked: PARKED.test(head) && full.length < 4000,
+    placeholder: PLACEHOLDER.test(head) && full.length < 1500,
+    teamLinks,
+    country: detectLocation(hostOf(base.hostname), html, full.slice(0, 8000).toLowerCase()).country,
+  };
+}
+
+/** Visible text of one public page, or "" if it can't be read. */
+export async function readPageText(url: string, maxText = 6000): Promise<string> {
+  try {
+    return visibleText((await fetchHtml(url, 0, { browserLike: true, maxBytes: 600_000 })).html).slice(0, maxText);
+  } catch {
+    return "";
+  }
+}
+
+const GENERIC = new Set(["the", "and", "of", "co", "company", "inc", "ltd", "llc", "limited", "plc", "gmbh", "group", "official", "shop", "store", "online", "hq", "app", "io"]);
+const fold = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/&/g, " and ");
+
+/** Whether a page is plausibly the named company's: its lead or most distinctive name word appears there, or the name is the domain. */
+export function namesCompany(page: SitePage, name: string) {
+  // "Lydia (Sumeria)" or "Glovo / Glovo Nigeria": judge by the main name.
+  const main = name.replace(/\(.*?\)/g, " ").split(/\s[/|–—-]\s|\//)[0];
+  const words = fold(main).replace(/[^a-z0-9 ]/g, " ").split(/\s+/).filter((w) => w.length > 2 && !GENERIC.has(w));
+  if (!words.length) return true;
+  const hay = fold(`${page.title} ${page.description} ${page.text} ${hostOf(page.url)}`);
+  const host = hostOf(page.url).replace(/[^a-z0-9]/g, "");
+  if (host.includes(words.join(""))) return true;
+  const longest = [...words].sort((a, b) => b.length - a.length)[0];
+  return hay.includes(words[0]) || hay.includes(longest);
+}
+
+const countryName = new Intl.DisplayNames(["en"], { type: "region" });
+
+/** Whether text names a country (its name, demonym or a main city or region in it). */
+export function mentionsCountry(text: string, code: string) {
+  const name = countryName.of(code)?.toLowerCase();
+  const t = fold(text);
+  if (name && name !== code.toLowerCase() && t.includes(name)) return true;
+  const res = [COUNTRY_WORDS[code], ...(PLACES[code] ?? []).map(([re]) => re)].filter(Boolean);
+  return res.some((re) => new RegExp(re.source, "i").test(t));
+}
+
+/** Whether a person's name appears in a page's text (first and last name, accents ignored). */
+export function namesPerson(text: string, person: string) {
+  const parts = fold(person).replace(/[^a-z\- ]/g, " ").split(/\s+/).filter((w) => w.length > 1);
+  if (parts.length < 2) return false;
+  const hay = fold(text);
+  return hay.includes(parts[0]) && hay.includes(parts[parts.length - 1]);
 }
 
 /* ---------- Safe fetch: public hosts only, small bodies, few redirects ---------- */
@@ -408,6 +520,11 @@ function safeTarget(url: URL) {
 const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
 
 async function readHomepage(url: string, hops = 0, opts: { browserLike?: boolean; maxBytes?: number } = {}): Promise<string> {
+  return (await fetchHtml(url, hops, opts)).html;
+}
+
+/** Like readHomepage, but also returns the final URL after redirects. Errors carry the HTTP status. */
+async function fetchHtml(url: string, hops = 0, opts: { browserLike?: boolean; maxBytes?: number } = {}): Promise<{ html: string; url: string }> {
   const u = new URL(url);
   safeTarget(u);
   await assertPublic(u.hostname);
@@ -421,11 +538,18 @@ async function readHomepage(url: string, hops = 0, opts: { browserLike?: boolean
   });
   const location = res.headers.get("location");
   if (res.status >= 300 && res.status < 400 && location) {
+    res.body?.cancel().catch(() => {});
     if (hops >= 4) throw new Error("Too many redirects");
-    return readHomepage(new URL(location, u).toString(), hops + 1, opts);
+    return fetchHtml(new URL(location, u).toString(), hops + 1, opts);
   }
-  if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
-  if (!(res.headers.get("content-type") ?? "").includes("html")) throw new Error("Not HTML");
+  if (!res.ok || !res.body) {
+    res.body?.cancel().catch(() => {});
+    throw Object.assign(new Error(`HTTP ${res.status}`), { status: res.status });
+  }
+  if (!(res.headers.get("content-type") ?? "").includes("html")) {
+    res.body.cancel().catch(() => {});
+    throw new Error("Not HTML");
+  }
 
   // Read at most ~400 KB.
   const reader = res.body.getReader();
@@ -438,5 +562,5 @@ async function readHomepage(url: string, hops = 0, opts: { browserLike?: boolean
     size += value.length;
   }
   reader.cancel().catch(() => {});
-  return new TextDecoder().decode(Buffer.concat(chunks));
+  return { html: new TextDecoder().decode(Buffer.concat(chunks)), url: u.toString() };
 }

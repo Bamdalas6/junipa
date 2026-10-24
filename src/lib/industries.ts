@@ -134,5 +134,6 @@ export const INDUSTRIES: Industry[] = [
 ];
 
 export function getIndustry(id: string | undefined): Industry {
-  return INDUSTRIES.find((i) => i.id === id) ?? INDUSTRIES[0];
+  // Unknown ids get the neutral profile, so research isn't steered towards one industry.
+  return INDUSTRIES.find((i) => i.id === id) ?? INDUSTRIES.find((i) => i.id === "other")!;
 }

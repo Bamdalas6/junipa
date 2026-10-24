@@ -11,5 +11,5 @@ export default async function WorkspacePage({
   const { domain } = await params;
   const { industry, goal, demo, step, reference, campaign, market, country, region } = await searchParams;
   const target = market === "worldwide" ? WORLDWIDE : sanitizeMarket({ scope: "country", country, region });
-  return <WorkspaceView domain={decodeURIComponent(domain).toLowerCase()} industry={industry ?? "fashion"} goal={goal ?? ""} demo={demo === "1"} initialStep={step} reference={reference} campaign={campaign} market={target} />;
+  return <WorkspaceView domain={decodeURIComponent(domain).toLowerCase()} industry={industry ?? "other"} goal={goal ?? ""} demo={demo === "1"} initialStep={step} reference={reference} campaign={campaign} market={target} />;
 }
