@@ -1,6 +1,8 @@
 // Request guards shared by the API routes: body size caps, per-IP rate limits,
 // input clipping and error messages that are safe to show users.
 
+import { onWorkers } from "./public-fetch";
+
 /** An error whose message is written for users and safe to show as-is. */
 export class ScoutError extends Error {}
 
@@ -50,6 +52,8 @@ const buckets = new Map<string, number[]>();
  * A global cap per endpoint (below) still bounds the total even if addresses are faked.
  */
 export function clientIp(request: Request) {
+  // Cloudflare sets this itself and overwrites any value a visitor sends.
+  if (onWorkers) return request.headers.get("cf-connecting-ip") ?? "cloudflare";
   if (process.env.VERCEL) return request.headers.get("x-real-ip") ?? "vercel";
   const hops = Math.max(1, Number(process.env.REACHLY_TRUSTED_PROXIES) || 1);
   const chain = (request.headers.get("x-forwarded-for") ?? "")

@@ -484,7 +484,12 @@ export async function runGeminiPhase(req: RunRequest, emit: Emit): Promise<unkno
         await pool(missing, 4, async (a) => {
           const key = foldName(a.name.replace(/\(.*?\)/g, ""));
           const found = (await webSearch(`${a.name} ${where} official website`, { max: 5, country })).find((h) => {
-            const label = foldName(bare(h.url).split(".")[0]);
+            // The name must be the site's own domain (brand.com, brand.com.ng), not a page on
+            // someone else's site such as brand.reviewsite.com.
+            const parts = bare(h.url).split(".");
+            const ccSecond = parts.length > 2 && /^(com|co|org|net|gov|edu|ac|ltd|plc)$/.test(parts[parts.length - 2]);
+            if (parts.length > (ccSecond ? 3 : 2)) return false;
+            const label = foldName(parts[0]);
             return key.length > 2 && (label.includes(key) || (label.length >= 4 && key.startsWith(label)));
           });
           if (found) {

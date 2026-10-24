@@ -26,6 +26,20 @@ Without `ANTHROPIC_API_KEY`, the app runs in **demo mode** with clearly labelled
 - `src/lib/store.ts`: workspaces are saved in the browser (localStorage) for now.
 - `src/components/WorkspaceView.tsx`: the six-step workspace UI.
 
+## Deploy to Cloudflare Workers
+
+Built with [OpenNext](https://opennext.js.org/cloudflare) (`wrangler.jsonc`, `open-next.config.ts`). Research needs the **Workers Paid** plan ($5/month): the Free plan allows 10 ms of CPU and 50 outbound requests per request, and one research step makes more calls than that.
+
+Deploy from GitHub, not from your computer: a local build copies `.env.local` (your test keys) into the Worker, and OpenNext doesn't fully support building on Windows.
+
+1. Cloudflare dashboard → **Workers & Pages** → **Create** → **Import a repository** → pick this repo.
+2. Project name `junia` (it must match `name` in `wrangler.jsonc`). Build command `npx opennextjs-cloudflare build`, deploy command `npx opennextjs-cloudflare deploy`.
+3. Worker → **Settings** → **Variables and Secrets**, add as secrets: `GEMINI_API_KEY`, `TAVILY_API_KEY`, `REACHLY_SIGNING_SECRET` (a new long random string), `REACHLY_PUBLIC_URL` (the site's https address), and `BACHS_SECRET_KEY` (a **live** key: a sandbox key turns payments off in production). Optional: `HUNTER_API_KEY`, prices and the founding offer from `.env.example`. Don't set `BACHS_RETURN_URL`.
+4. `NEXT_PUBLIC_FEEDBACK_EMAIL` is read when the site is built, so add it under the build's variables, not the Worker's.
+5. Recommended: a **WAF rate limiting rule** on `/api/run` and `/api/social` (Security → WAF). The app's own limits are per Worker instance, so they're weaker on Cloudflare.
+
+Test the Workers build locally: `npm run preview` (reads keys from `.dev.vars`).
+
 ## Before launching as a paid SaaS
 
 - Accounts and a database (replace `store.ts`), e.g. Supabase

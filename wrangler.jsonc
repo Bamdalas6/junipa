@@ -1,0 +1,30 @@
+// Cloudflare Workers config for Junia (built with @opennextjs/cloudflare).
+// Secrets (API keys) are not in this file: set them in the Cloudflare dashboard
+// (Worker > Settings > Variables and Secrets) or with `npx wrangler secret put NAME`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "junia",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  // nodejs_compat: Node APIs (crypto, streams) for the Next.js server.
+  // global_fetch_strictly_public: fetch() can only reach the public internet,
+  // so research can never be pointed at internal addresses.
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "junia"
+    }
+  ],
+  // Research steps wait on several sites and searches; give each request room.
+  "limits": {
+    "cpu_ms": 60000
+  },
+  "observability": {
+    "enabled": true
+  }
+}
