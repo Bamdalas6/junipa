@@ -26,6 +26,8 @@ export interface Workspace {
   contacted: Record<string, boolean>;
   /** Paid unlocks for decision makers + outreach, per campaign (segment id). */
   unlocks?: Record<string, { token: string; tier: string; at: number }>;
+  /** Campaigns whose decision makers were already added to the pipeline. */
+  leadsImported?: Record<string, boolean>;
 }
 
 const KEY = (d: string) => `reachly:ws:${d}`;

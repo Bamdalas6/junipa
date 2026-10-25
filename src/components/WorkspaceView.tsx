@@ -10,6 +10,7 @@ import {
   Download,
   ExternalLink,
   Info,
+  KanbanSquare,
   Lightbulb,
   Mail,
   Plus,
@@ -30,6 +31,8 @@ import { getIndustry } from "@/lib/industries";
 import { handlesFromUrls } from "@/lib/social-shared";
 import type { Account, Competitors, Contact, Contacts, Outreach, Profile, RunRequest, Segment, Segments } from "@/lib/schema";
 import { deleteCloudWorkspaces, newer, pullWorkspace, pushWorkspace } from "@/lib/cloud";
+import { logSent, trackLeads, type NewLead } from "@/lib/leads-client";
+import type { LeadChannel } from "@/lib/leads-shared";
 import { deleteWorkspace, loadWorkspace, newWorkspace, saveWorkspace, type Workspace } from "@/lib/store";
 import { useRuns, type RunState } from "@/lib/useRun";
 import { clearPendingCheckout, pendingCheckout } from "@/lib/pending-pay";
@@ -207,6 +210,63 @@ export default function WorkspaceView({
   const launched = selectedSegs.filter((s) => ws?.accounts[s.id] || get(`accounts:${s.id}`).status !== "idle");
   const seg = launched.find((s) => s.id === activeSeg) ?? launched[0];
 
+  // Results tracking: decision makers go into the pipeline as they arrive, and every
+  // message sent from here is logged on its lead (see /w/[domain]/pipeline).
+  const canTrack = signedIn && !!ws && !ws.demo;
+  const [tracked, setTracked] = useState<Record<string, "added" | "limit">>({});
+  const [trackNote, setTrackNote] = useState("");
+  const importing = useRef(new Set<string>());
+  const profileLine = ws?.profile ? `${ws.profile.name}: ${ws.profile.oneLiner}` : undefined;
+  const toLead = useCallback(
+    (s: Segment, a: Account, c: Contact | null): NewLead => ({
+      campaign: s.id,
+      account: a.name,
+      name: c?.name ?? "Team",
+      role: c?.role || undefined,
+      email: c?.email || undefined,
+      linkedin: c?.linkedin || undefined,
+      instagram: a.instagram || undefined,
+      context: { why: a.why, signal: a.signal || undefined, angle: s.angle, brand: profileLine, website: a.website || undefined },
+    }),
+    [profileLine],
+  );
+  useEffect(() => {
+    if (!canTrack || !ws || !seg || !ws.contacts[seg.id] || ws.leadsImported?.[seg.id] || importing.current.has(seg.id)) return;
+    const id = seg.id;
+    importing.current.add(id);
+    const picked = new Set(ws.picked[id] ?? []);
+    const people = (ws.accounts[id] ?? [])
+      .filter((a) => picked.has(a.name))
+      .flatMap((a) => {
+        const found = ws.contacts[id].contacts.filter((c) => c.account.toLowerCase() === a.name.toLowerCase());
+        return found.length ? found.map((c) => toLead(seg, a, c)) : [toLead(seg, a, null)];
+      });
+    trackLeads(ws.domain, people)
+      .then((r) => {
+        update((w) => ({ ...w, leadsImported: { ...w.leadsImported, [id]: true } }));
+        if (r.overLimit) setTrackNote(`${r.overLimit} decision makers weren't added to your pipeline: the free plan holds 25 leads.`);
+      })
+      .catch(() => importing.current.delete(id));
+  }, [canTrack, ws, seg, toLead, update]);
+  const logSend = useCallback(
+    (s: Segment, a: Account, c: Contact | null, channel: LeadChannel, body: string, subject?: string) => {
+      if (!canTrack || !ws || !body) return;
+      logSent(ws.domain, toLead(s, a, c), { channel, subject, body })
+        .then((r) => r.overLimit && setTrackNote("That message wasn't added to your pipeline: the free plan holds 25 leads."))
+        .catch(() => {});
+    },
+    [canTrack, ws, toLead],
+  );
+  const trackProspect = useCallback(
+    (s: Segment, a: Account) => {
+      if (!canTrack || !ws) return;
+      trackLeads(ws.domain, [toLead(s, a, null)])
+        .then((r) => setTracked((t) => ({ ...t, [a.name]: r.ids.length ? "added" : "limit" })))
+        .catch(() => {});
+    },
+    [canTrack, ws, toLead],
+  );
+
   // Back from checkout: confirm the payment on the server, then store the signed unlock.
   const wsDomain = ws?.domain;
   const hasUnlock = !!(campaign && ws?.unlocks?.[campaign]);
@@ -367,6 +427,11 @@ export default function WorkspaceView({
           <Button variant="secondary" size="sm" disabled={leadCount === 0} onClick={() => exportCsv(ws)}>
             <Download className="size-3.5" /> <span className="hidden sm:inline">Export</span>
           </Button>
+          {!ws.demo && (
+            <Link href={`/w/${ws.domain}/pipeline`} className="inline-flex h-7 items-center gap-1 rounded-lg border border-line-2 bg-white px-2.5 text-xs font-medium hover:border-ink/30" aria-label="Pipeline">
+              <KanbanSquare className="size-3.5" /> <span className="hidden sm:inline">Pipeline</span>
+            </Link>
+          )}
         </div>
         <nav className="scroll-thin flex gap-1 overflow-x-auto border-t border-line px-3 py-2 lg:hidden" aria-label="Steps">
           {steps.map((s) => (
@@ -435,6 +500,11 @@ export default function WorkspaceView({
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-paper">
                   <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${leadCount ? Math.min(100, (100 * contactedCount) / leadCount) : 0}%` }} />
                 </div>
+                {!ws.demo && (
+                  <Link href={`/w/${ws.domain}/pipeline`} className="mt-3 inline-flex items-center gap-1 text-[12.5px] font-medium text-accent hover:underline">
+                    <KanbanSquare className="size-3.5" /> Track replies in your pipeline
+                  </Link>
+                )}
               </div>
               <button
                 onClick={() => {
@@ -616,6 +686,8 @@ export default function WorkspaceView({
                       busy={get(`contacts:${seg.id}`).status === "running"}
                       hasNext={!!ws.contacts[seg.id]}
                       unlocked={unlocked}
+                      onTrack={canTrack ? (a) => trackProspect(seg, a) : undefined}
+                      tracked={tracked}
                       onNext={() => {
                         if (unlocked && ws.contacts[seg.id]) runContactsAndOutreach(seg);
                         proceedToPeople();
@@ -645,6 +717,7 @@ export default function WorkspaceView({
               {seg && (
                 <>
                   <Activity run={get(`contacts:${seg.id}`)} onRetry={() => runContactsAndOutreach(seg)} rows={4} label="is identifying decision makers" />
+                  {trackNote && <p className="mb-3 text-[12.5px] text-warn">{trackNote}</p>}
                   {ws.contacts[seg.id] && get(`contacts:${seg.id}`).status !== "running" && (
                     <ContactsView
                       demo={ws.demo}
@@ -654,6 +727,7 @@ export default function WorkspaceView({
                       outreach={ws.outreach[seg.id]}
                       contacted={ws.contacted}
                       onContacted={(key, v) => update((w) => ({ ...w, contacted: { ...w.contacted, [key]: v } }))}
+                      onSent={(a, c, channel, body, subject) => logSend(seg, a, c, channel, body, subject)}
                     />
                   )}
                 </>
@@ -1263,6 +1337,8 @@ function AccountsView({
   busy,
   hasNext,
   unlocked,
+  onTrack,
+  tracked = {},
 }: {
   demo: boolean;
   unlocked: boolean;
@@ -1272,7 +1348,26 @@ function AccountsView({
   onNext: () => void;
   busy: boolean;
   hasNext: boolean;
+  /** Adds the business to the pipeline (signed in, live research only). */
+  onTrack?: (a: Account) => void;
+  tracked?: Record<string, "added" | "limit">;
 }) {
+  const trackButton = (a: Account, big?: boolean) =>
+    onTrack && (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (!tracked[a.name]) onTrack(a);
+        }}
+        aria-label={tracked[a.name] === "added" ? `${a.name} is in your pipeline` : `Add ${a.name} to your pipeline`}
+        title={tracked[a.name] === "limit" ? "Free plan: 25 leads. Unlock a campaign for unlimited." : tracked[a.name] === "added" ? "In your pipeline" : "Add to pipeline"}
+        className={`grid ${big ? "size-8" : "size-7"} place-items-center rounded-md ${tracked[a.name] === "added" ? "text-good" : tracked[a.name] === "limit" ? "text-warn" : "text-muted hover:bg-paper hover:text-ink"}`}
+      >
+        {tracked[a.name] === "added" ? <CheckCircle2 className={big ? "size-4" : "size-3.5"} /> : <KanbanSquare className={big ? "size-4" : "size-3.5"} />}
+      </button>
+    );
   const set = new Set(picked);
   const toggle = (n: string) => onPick(set.has(n) ? picked.filter((x) => x !== n) : [...picked, n]);
   const allOn = picked.length === accounts.length;
@@ -1318,6 +1413,7 @@ function AccountsView({
                   )}
                 </span>
                 <span className="flex shrink-0 flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                  {trackButton(a, true)}
                   {igHandle(a.instagram) && !demo && (
                     <a href={`https://instagram.com/${igHandle(a.instagram)}`} target="_blank" rel="noreferrer" className="grid size-8 place-items-center rounded-md text-muted hover:bg-paper hover:text-pink" aria-label={`${a.name} on Instagram`}>
                       <Instagram className="size-4" />
@@ -1379,6 +1475,7 @@ function AccountsView({
                   </td>
                   <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-1">
+                      {trackButton(a)}
                       {igHandle(a.instagram) && !demo && (
                         <a href={`https://instagram.com/${igHandle(a.instagram)}`} target="_blank" rel="noreferrer" className="grid size-7 place-items-center rounded-md text-muted hover:bg-paper hover:text-pink" aria-label={`${a.name} on Instagram`}>
                           <Instagram className="size-3.5" />
@@ -1421,6 +1518,7 @@ function ContactsView({
   outreach,
   contacted,
   onContacted,
+  onSent,
 }: {
   demo: boolean;
   data: Contacts;
@@ -1429,6 +1527,8 @@ function ContactsView({
   outreach?: Outreach;
   contacted: Record<string, boolean>;
   onContacted: (key: string, v: boolean) => void;
+  /** Logs a sent message on the lead in the pipeline. */
+  onSent?: (a: Account, c: Contact | null, channel: LeadChannel, body: string, subject?: string) => void;
 }) {
   const first = outreach?.steps[0];
   const email = outreach?.steps.find((s) => s.channel === "email");
@@ -1484,7 +1584,11 @@ function ContactsView({
                       href={`https://ig.me/m/${igHandle(a.instagram)}`}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={() => navigator.clipboard?.writeText(msg).catch(() => {})}
+                      onClick={() => {
+                        navigator.clipboard?.writeText(msg).catch(() => {});
+                        if (!done) onContacted(key, true);
+                        onSent?.(a, c, "instagram", msg);
+                      }}
                       title="Copies the first message, then opens the DM"
                       className="inline-flex h-7 items-center gap-1 rounded-lg border border-line px-2.5 text-xs font-medium hover:border-pink/40 hover:text-pink"
                     >
@@ -1494,6 +1598,10 @@ function ContactsView({
                   {c && plainEmail(c.email) && email && !demo && (
                     <a
                       href={`mailto:${plainEmail(c.email)}?subject=${encodeURIComponent(personalize(email.subject, c, a.name))}&body=${encodeURIComponent(personalize(email.body, c, a.name))}`}
+                      onClick={() => {
+                        if (!done) onContacted(key, true);
+                        onSent?.(a, c, "email", personalize(email.body, c, a.name), personalize(email.subject, c, a.name));
+                      }}
                       className="inline-flex h-7 items-center gap-1 rounded-lg border border-line px-2.5 text-xs font-medium hover:border-info/40 hover:text-info"
                     >
                       <Mail className="size-3.5" /> Email
@@ -1506,7 +1614,15 @@ function ContactsView({
                   )}
                   {msg && <CopyButton text={msg} label="Copy" />}
                   <label className={`inline-flex h-7 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium ${done ? "border-good/30 bg-good-soft text-good" : "border-line text-ink-2"}`}>
-                    <input type="checkbox" checked={done} onChange={(e) => onContacted(key, e.target.checked)} className="size-3.5 accent-good" />
+                    <input
+                      type="checkbox"
+                      checked={done}
+                      onChange={(e) => {
+                        onContacted(key, e.target.checked);
+                        if (e.target.checked && msg) onSent?.(a, c, c && plainEmail(c.email) ? "email" : igHandle(a.instagram) ? "instagram" : "other", msg);
+                      }}
+                      className="size-3.5 accent-good"
+                    />
                     {done ? "Contacted" : "Mark sent"}
                   </label>
                 </div>

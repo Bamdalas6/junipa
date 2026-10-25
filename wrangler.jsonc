@@ -4,7 +4,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "junipa",
-  "main": ".open-next/worker.js",
+  // custom-worker.ts wraps .open-next/worker.js (the Next.js app) and adds the follow-up cron.
+  "main": "custom-worker.ts",
   "compatibility_date": "2026-10-01",
   // nodejs_compat: Node APIs (crypto, streams) for the Next.js server.
   // global_fetch_strictly_public: fetch() can only reach the public internet,
@@ -31,6 +32,10 @@
   ],
   // No "limits" here: the Free plan rejects any CPU setting. On Workers Paid the
   // default 30 s of CPU per request is plenty (research mostly waits on the network).
+  // Every hour: scheduled follow-ups whose day has come become "due" (see src/lib/followups-cron.ts).
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
   "observability": {
     "enabled": true
   }
