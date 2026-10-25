@@ -166,7 +166,8 @@ export default function WorkspaceView({
         update((w) => ({
           ...w,
           accounts: { ...w.accounts, [seg.id]: accounts },
-          picked: { ...w.picked, [seg.id]: accounts.slice(0, 8).map((a) => a.name) },
+          // Every prospect is picked: a subscription finds decision makers for all of them.
+          picked: { ...w.picked, [seg.id]: accounts.map((a) => a.name) },
         })),
       );
     },
@@ -708,7 +709,7 @@ export default function WorkspaceView({
             <section className="card p-5 sm:p-6">
               <h2 className="text-[18px] font-semibold">Decision makers and outreach</h2>
               <p className="mt-1 max-w-2xl text-[14px] text-muted">
-                Scout finds the people who decide at {seg ? `your ${(ws.picked[seg.id] ?? []).length} picked accounts` : "your picked accounts"}, confirms each on a public page, and writes the outreach. Part of Starter and Pro, on every campaign.
+                Scout finds the people who decide at {seg ? `all ${(ws.picked[seg.id] ?? []).length} of your prospect accounts` : "all your prospect accounts"}, confirms each on a public page, and writes the outreach. Starter and Pro unlock every decision maker, on every campaign.
               </p>
               <div className="mt-5">
                 <PlanCards billing={billing} compact />
@@ -1390,8 +1391,8 @@ function AccountsView({
   return (
     <div className="rise">
       <div className="mb-3 flex items-center gap-2 text-xs">
-        <Button size="sm" variant="secondary" onClick={() => onPick(accounts.slice(0, 8).map((a) => a.name))}>
-          Top 8
+        <Button size="sm" variant="secondary" onClick={() => onPick(accounts.map((a) => a.name))}>
+          Select all
         </Button>
         <Button size="sm" variant="ghost" onClick={() => onPick([])}>
           Clear

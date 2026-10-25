@@ -4,6 +4,7 @@ import { z } from "zod";
 import { mentionsCountry, namesCompany, namesPerson, readPageText, readSite, type SitePage } from "./detect";
 import { RESEARCHER, STRUCTURER, brief, enrichEmails, targetMarket } from "./engine";
 import { formatHits, webSearch, webSearchAll, webSearchOn, type Hit } from "./websearch";
+import { MAX_ACCOUNTS } from "./plans";
 import {
   AccountsSchema,
   CompetitorsSchema,
@@ -477,7 +478,7 @@ export async function runGeminiPhase(req: RunRequest, emit: Emit): Promise<unkno
         return [grounded];
       });
       // List articles rarely give websites: look each one up, taking a result whose domain carries the name.
-      const missing = candidates.filter((a) => !a.website).slice(0, 8);
+      const missing = candidates.filter((a) => !a.website).slice(0, MAX_ACCOUNTS);
       const lookedUp = new Set<(typeof candidates)[number]>();
       if (hits.length && missing.length) {
         emit({ type: "log", kind: "search", text: `Looking up the websites of ${missing.length} prospects` });

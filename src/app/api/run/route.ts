@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { ApiError } from "@google/genai";
 import { currentUser } from "@/lib/auth";
 import { entitlement, planOf } from "@/lib/billing";
+import { MAX_ACCOUNTS } from "@/lib/plans";
 import { runDemo } from "@/lib/demo";
 import { sanitizeMarket } from "@/lib/geo";
 import { provider, runPhase } from "@/lib/engine";
@@ -44,7 +45,7 @@ export async function POST(request: Request) {
     profile: body.profile && typeof body.profile === "object" ? clipDeep(body.profile) : undefined,
     competitors: body.competitors && typeof body.competitors === "object" ? clipDeep(body.competitors) : undefined,
     segment: body.segment && typeof body.segment === "object" && typeof body.segment.id === "string" ? clipDeep(body.segment) : undefined,
-    accounts: Array.isArray(body.accounts) ? clipDeep(body.accounts, { arr: 25 }) : undefined,
+    accounts: Array.isArray(body.accounts) ? clipDeep(body.accounts, { arr: MAX_ACCOUNTS }) : undefined,
     market: body.market,
   };
   if ((req.phase === "accounts" || req.phase === "outreach") && !req.segment) {

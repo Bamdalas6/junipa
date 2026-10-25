@@ -1,5 +1,8 @@
 import { FREE_LEADS } from "./leads-shared";
 
+/** Prospect accounts a campaign can hold (the research finds 10-12; the API accepts up to this). */
+export const MAX_ACCOUNTS = 25;
+
 // Subscription plans, shared by the pricing page and the server.
 // Prices shown here come from REACHLY_PRICE_* and must match the recurring products
 // in Bachs (BACHS_PRODUCT_*), which are what actually gets charged.
@@ -35,13 +38,14 @@ export const PLAN_LIST = (prices?: Partial<Record<`${PlanId}_${Interval}`, numbe
     features: [
       "Research workspace for your brand",
       "Buyer and channel research",
-      "Decision makers for 8 accounts per campaign",
+      "Decision makers for every prospect, on every campaign",
       "Outreach drafts for DM, email and WhatsApp",
       "Pipeline for up to 25 leads",
       "Launch kit (coming soon)",
     ],
-    accounts: 8,
-    peoplePerAccount: 1,
+    // Any subscription unlocks every decision maker: all of a campaign's prospects, up to 2 people each.
+    accounts: MAX_ACCOUNTS,
+    peoplePerAccount: 2,
     verifiedEmails: false,
     leads: FREE_LEADS,
     followUps: false,
@@ -54,12 +58,11 @@ export const PLAN_LIST = (prices?: Partial<Record<`${PlanId}_${Interval}`, numbe
     blurb: "Turn replies into customers",
     features: [
       "Everything in Starter",
-      "Decision makers for 20 accounts, 2 people each",
       "Verified work emails where available",
       "Results tracking: unlimited pipeline",
       "Automatic follow-ups, drafted by Scout",
     ],
-    accounts: 20,
+    accounts: MAX_ACCOUNTS,
     peoplePerAccount: 2,
     verifiedEmails: true,
     leads: null,
