@@ -201,6 +201,19 @@ function AuthDialog({
           </button>
         </form>
 
+        {signup && (
+          <p className="mt-3 text-center text-[12px] leading-relaxed text-faint">
+            By creating an account you agree to our{" "}
+            <a href="/terms" target="_blank" className="underline hover:text-ink">
+              Terms
+            </a>{" "}
+            and{" "}
+            <a href="/privacy" target="_blank" className="underline hover:text-ink">
+              Privacy Policy
+            </a>
+            .
+          </p>
+        )}
         <p className="mt-4 text-center text-[13.5px] text-muted">
           {signup ? "Already have an account? " : "New to Junia? "}
           <button

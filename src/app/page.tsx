@@ -476,7 +476,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="pb-28">
-          <div className="mx-auto grid max-w-[1180px] gap-10 border-x border-line px-5 py-12 sm:grid-cols-2 sm:px-8 lg:grid-cols-[minmax(0,1fr)_160px_160px_160px]">
+          <div className="mx-auto grid max-w-[1180px] gap-10 border-x border-line px-5 py-12 sm:grid-cols-2 sm:px-8 lg:grid-cols-[minmax(0,1fr)_150px_150px_150px_150px]">
             <div>
               <B>
                 <Logo />
@@ -582,7 +582,7 @@ const STATS: [string, string][] = [
 const HOW: [string, string][] = [
   ["Paste", "Drop your website or a social profile link. Scout detects your industry and home market."],
   ["Approve", "Scout proposes audiences with pains and hooks. Pick up to three to run as campaigns."],
-  ["Unlock", "Pay once per campaign to get decision makers and a ready sequence for each one."],
+  ["Unlock", "Subscribe to Starter or Pro to get decision makers and a ready sequence on every campaign."],
   ["Send", "Open each DM or email in one click, mark who you've reached and export to CSV."],
 ];
 
@@ -590,6 +590,7 @@ const FOOTER: [string, [string, string][]][] = [
   ["Product", [["Pipeline", "#pipeline"], ["Pricing", "#pricing"], ["How it works", "#how"]]],
   ["Try it", [["Live demo", DEMO_HREF], ["Grow socials", "/social"]]],
   ["Start", [["Run my pipeline", "#start"]]],
+  ["Legal", [["Privacy Policy", "/privacy"], ["Terms of Service", "/terms"]]],
 ];
 
 /* ---------- Hero: live orchestration diagram ---------- */

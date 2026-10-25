@@ -96,6 +96,13 @@ export function PlanCards({ billing, back, compact }: { billing: BillingStatus |
         {!billing && [0, 1].map((i) => <div key={i} className="skeleton h-80 rounded-[12px]" />)}
       </div>
       {error && <p className="mt-3 text-[13px] text-bad">{error}</p>}
+      <p className="mt-3 text-[12px] text-faint">
+        Renews automatically until you cancel; cancel any time from Billing. By subscribing you agree to our{" "}
+        <a href="/terms" className="underline hover:text-ink">
+          Terms
+        </a>
+        .
+      </p>
     </div>
   );
 }
