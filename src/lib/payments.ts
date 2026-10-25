@@ -197,7 +197,7 @@ export function unseal<T>(sealed: string): T {
 
 const bachsBase = () => (process.env.BACHS_SECRET_KEY?.startsWith("sk_live_") ? "https://api.bachs.io" : "https://sandbox-api.bachs.io");
 
-async function bachs<T>(path: string, init?: RequestInit): Promise<T> {
+export async function bachs<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${bachsBase()}${path}`, {
     ...init,
     headers: { Authorization: `Bearer ${process.env.BACHS_SECRET_KEY}`, "Content-Type": "application/json", ...(init?.headers ?? {}) },

@@ -157,10 +157,10 @@ export default function PipelineView({ domain }: { domain: string }) {
             <Stats data={data} />
             {data.limit.max !== null && (
               <p className="mt-3 rounded-lg border border-line bg-white px-3.5 py-2.5 text-[13px] text-ink-2">
-                Free plan: <span className="font-semibold">{Math.min(data.limit.used, data.limit.max)}</span> of {data.limit.max} leads used.
-                {data.limit.used >= data.limit.max ? " New leads won't be added until you unlock a campaign." : ""}{" "}
-                <Link href="/#pricing" className="font-medium text-accent hover:underline">
-                  Unlimited with any paid campaign
+                <span className="font-semibold">{Math.min(data.limit.used, data.limit.max)}</span> of {data.limit.max} leads used.
+                {data.limit.used >= data.limit.max ? " New leads won't be added until you upgrade." : ""}{" "}
+                <Link href="/billing" className="font-medium text-accent hover:underline">
+                  Unlimited leads and automatic follow-ups with Pro
                 </Link>
               </p>
             )}
@@ -216,7 +216,7 @@ export default function PipelineView({ domain }: { domain: string }) {
         )}
       </main>
 
-      {lead && <LeadDrawer lead={lead} onClose={() => setOpenId(null)} onChanged={refresh} onStatus={(s) => setStatus(lead.id, s)} />}
+      {lead && <LeadDrawer lead={lead} pro={!!data?.followUps} onClose={() => setOpenId(null)} onChanged={refresh} onStatus={(s) => setStatus(lead.id, s)} />}
     </div>
   );
 }
@@ -412,7 +412,7 @@ function SendButton({ lead, channel, subject, body, followUpId, onSent }: { lead
   );
 }
 
-function LeadDrawer({ lead, onClose, onChanged, onStatus }: { lead: Lead; onClose: () => void; onChanged: () => void; onStatus: (s: LeadStatus) => void }) {
+function LeadDrawer({ lead, pro, onClose, onChanged, onStatus }: { lead: Lead; pro: boolean; onClose: () => void; onChanged: () => void; onStatus: (s: LeadStatus) => void }) {
   const [notes, setNotes] = useState(lead.notes ?? "");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -466,7 +466,7 @@ function LeadDrawer({ lead, onClose, onChanged, onStatus }: { lead: Lead; onClos
             />
           </label>
 
-          <Sequence lead={lead} active={active} stopped={stopped} onChanged={onChanged} />
+          <Sequence lead={lead} active={active} stopped={stopped} pro={pro} onChanged={onChanged} />
 
           <section>
             <h3 className="text-[14px] font-semibold">Messages</h3>
@@ -554,7 +554,7 @@ interface DraftStep {
 }
 
 /** Set up follow-ups: pick the days, let the AI draft them, edit, then start. */
-function Sequence({ lead, active, stopped, onChanged }: { lead: Lead; active: FollowUp[]; stopped: boolean; onChanged: () => void }) {
+function Sequence({ lead, active, stopped, pro, onChanged }: { lead: Lead; active: FollowUp[]; stopped: boolean; pro: boolean; onChanged: () => void }) {
   const defaultChannel = lead.channel && lead.channel !== "other" ? lead.channel : plainEmail(lead.email ?? undefined) ? "email" : lead.instagram ? "instagram" : "email";
   const [steps, setSteps] = useState<DraftStep[]>([
     { day: 3, channel: defaultChannel, subject: "", body: "" },
@@ -604,6 +604,21 @@ function Sequence({ lead, active, stopped, onChanged }: { lead: Lead; active: Fo
           ))}
         </ol>
         <p className="mt-2 text-[12px] text-faint">Stops by itself when you move this lead to Replied, Interested, Signed up or Not interested.</p>
+      </section>
+    );
+
+  if (!pro)
+    return (
+      <section className="rounded-[10px] border border-accent/25 bg-accent-soft/40 p-3.5">
+        <h3 className="flex items-center gap-1.5 text-[14px] font-semibold">
+          <Sparkles className="size-4 text-accent" /> Automatic follow-ups
+        </h3>
+        <p className="mt-1 text-[13px] text-ink-2">
+          Most replies come on the second or third message. With Pro, Scout drafts each follow-up from your research, schedules it, and stops the moment {lead.name === "Team" ? "they" : lead.name.split(" ")[0]} replies.
+        </p>
+        <Link href="/billing" className="mt-3 inline-flex h-8 items-center rounded-lg bg-ink px-3 text-[13px] font-medium text-white hover:bg-ink-2">
+          See Pro
+        </Link>
       </section>
     );
 

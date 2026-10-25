@@ -12,7 +12,7 @@ import {
   type LeadStatus,
   type PipelineData,
 } from "./leads-shared";
-import { verifyUnlock } from "./payments";
+import { entitlement } from "./billing";
 
 // Results tracking on the server: leads, their messages and follow-ups, per user + workspace.
 
@@ -49,19 +49,10 @@ export const isStatus = (s: unknown): s is LeadStatus => typeof s === "string" &
 export const cleanChannel = (s: unknown) => (typeof s === "string" && (LEAD_CHANNELS as readonly string[]).includes(s) ? s : "other");
 export const text = (v: unknown, n: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, n) : null);
 
-/** Whether the user has bought any campaign (checked from the signed unlocks in their saved workspaces). */
-export async function hasPaid(userId: string) {
-  const { results } = await (await db()).prepare("SELECT domain, data FROM workspaces WHERE user_id = ?").bind(userId).all<{ domain: string; data: string }>();
-  for (const r of results) {
-    const unlocks = parse<{ unlocks?: Record<string, { token?: string }> }>(r.data)?.unlocks ?? {};
-    for (const [campaign, u] of Object.entries(unlocks)) if (u?.token && verifyUnlock(u.token, r.domain, campaign)) return true;
-  }
-  return false;
-}
-
+/** Pro: unlimited leads. Free and Starter: FREE_LEADS in total. */
 export async function leadLimit(userId: string): Promise<{ used: number; max: number | null }> {
   const used = (await (await db()).prepare("SELECT COUNT(*) AS n FROM leads WHERE user_id = ?").bind(userId).first<{ n: number }>())?.n ?? 0;
-  return { used, max: (await hasPaid(userId)) ? null : FREE_LEADS };
+  return { used, max: (await entitlement(userId)) === "pro" ? null : FREE_LEADS };
 }
 
 /** A lead that belongs to this user, or null. */
@@ -130,6 +121,7 @@ export async function pipeline(userId: string, workspace: string): Promise<Pipel
     },
     limit: await leadLimit(userId),
     dailyLimit: DAILY_FOLLOW_UPS(),
+    followUps: (await entitlement(userId)) === "pro",
   };
 }
 

@@ -32,12 +32,14 @@ import { handlesFromUrls } from "@/lib/social-shared";
 import type { Account, Competitors, Contact, Contacts, Outreach, Profile, RunRequest, Segment, Segments } from "@/lib/schema";
 import { deleteCloudWorkspaces, newer, pullWorkspace, pushWorkspace } from "@/lib/cloud";
 import { logSent, trackLeads, type NewLead } from "@/lib/leads-client";
+import { useBilling } from "@/lib/useBilling";
 import type { LeadChannel } from "@/lib/leads-shared";
 import { deleteWorkspace, loadWorkspace, newWorkspace, saveWorkspace, type Workspace } from "@/lib/store";
 import { useRuns, type RunState } from "@/lib/useRun";
 import { clearPendingCheckout, pendingCheckout } from "@/lib/pending-pay";
 import { MarketPicker, marketLabel } from "./MarketPicker";
 import { Paywall } from "./Paywall";
+import { PlanCards } from "./Plans";
 import { TestimonialAsk } from "./TestimonialAsk";
 import { AccountButton, useAuth } from "./Auth";
 import { ThemeToggle } from "./ThemeToggle";
@@ -79,6 +81,9 @@ export default function WorkspaceView({
   const [payNote, setPayNote] = useState<"" | "verifying" | "paid" | "failed">("");
   const { user, ready: authReady, open: openAuth } = useAuth();
   const signedIn = !!user;
+  // A Starter or Pro subscription opens the paid steps on every campaign.
+  const { status: billing } = useBilling([user]);
+  const subscribed = !!billing && billing.plan !== "free";
 
   // One step per screen; the step lives in the URL so refresh and back work.
   const goto = useCallback((next: StepId) => {
@@ -295,12 +300,12 @@ export default function WorkspaceView({
     };
   }, [wsDomain, hasUnlock, reference, campaign, update]);
 
-  // Once unlocked, the paid steps start on their own.
+  // Once unlocked (a subscription, or a campaign bought earlier), the paid steps start on their own.
   useEffect(() => {
-    if (!ws || !seg || !ws.unlocks?.[seg.id] || (step !== "people" && step !== "outreach")) return;
+    if (!ws || !seg || !(ws.unlocks?.[seg.id] || (subscribed && !ws.demo)) || (step !== "people" && step !== "outreach")) return;
     if (!ws.accounts[seg.id] || ws.contacts[seg.id] || get(`contacts:${seg.id}`).status !== "idle") return;
     runContactsAndOutreach(seg);
-  }, [ws, seg, step, get, runContactsAndOutreach]);
+  }, [ws, seg, step, get, runContactsAndOutreach, subscribed]);
 
   if (!ws || live === null) return <BootScreen />;
 
@@ -337,8 +342,8 @@ export default function WorkspaceView({
   ];
 
   const unlock = seg ? ws.unlocks?.[seg.id] : undefined;
-  const unlocked = !!unlock;
-  const tierName = unlock?.tier === "pro" ? "Pro" : "Starter";
+  const unlocked = !!unlock || (subscribed && !ws.demo);
+  const tierName = subscribed && !ws.demo ? (billing?.plan === "pro" ? "Pro" : "Starter") : unlock?.tier === "pro" ? "Pro" : "Starter";
   const avail: Record<StepId, boolean> = {
     brand: true,
     competitors: !!ws.profile || compRun.status !== "idle",
@@ -699,7 +704,18 @@ export default function WorkspaceView({
             </Section>
           )}
 
-          {PAID.includes(step) && !unlocked && (
+          {PAID.includes(step) && !unlocked && !ws.demo && (
+            <section className="card p-5 sm:p-6">
+              <h2 className="text-[18px] font-semibold">Decision makers and outreach</h2>
+              <p className="mt-1 max-w-2xl text-[14px] text-muted">
+                Scout finds the people who decide at {seg ? `your ${(ws.picked[seg.id] ?? []).length} picked accounts` : "your picked accounts"}, confirms each on a public page, and writes the outreach. Part of Starter and Pro, on every campaign.
+              </p>
+              <div className="mt-5">
+                <PlanCards billing={billing} compact />
+              </div>
+            </section>
+          )}
+          {PAID.includes(step) && !unlocked && ws.demo && (
             <Paywall
               brand={ws.profile?.name ?? ws.domain}
               domain={ws.domain}

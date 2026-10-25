@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ApiError } from "@google/genai";
 import { currentUser } from "@/lib/auth";
+import { entitlement, planOf } from "@/lib/billing";
 import { runDemo } from "@/lib/demo";
 import { sanitizeMarket } from "@/lib/geo";
 import { provider, runPhase } from "@/lib/engine";
@@ -52,18 +53,26 @@ export async function POST(request: Request) {
   req.market = sanitizeMarket(req.market);
 
   // The brand profile is free to try; every later step needs an account.
-  if (req.phase !== "profile" && !req.demo && !(await currentUser(request))) {
+  const user = req.phase !== "profile" && !req.demo ? await currentUser(request) : null;
+  if (req.phase !== "profile" && !req.demo && !user) {
     return Response.json({ error: "Create a free account to continue.", signIn: true }, { status: 401 });
   }
 
-  // Decision makers and outreach are paid per campaign. Demo runs only ever return sample data.
+  // Decision makers and outreach need a Starter or Pro subscription, whose plan sets the limits.
+  // A campaign bought before subscriptions (a signed unlock token) keeps working.
+  // Demo runs only ever return sample data.
   req.limits = undefined;
   if (isPaidPhase(req.phase) && !req.demo) {
-    const tier = verifyUnlock(req.unlock, req.domain, req.segment?.id);
-    // Always needs a signed token: a real payment, or a test unlock while testing locally.
-    if (!tier) return Response.json({ error: "Unlock this campaign to continue." }, { status: 402 });
-    const t = TIERS[tier];
-    req.limits = { accounts: t.accounts, people: t.peoplePerAccount, verifiedEmails: t.verifiedEmails };
+    const plan = user ? await entitlement(user.id) : "free";
+    if (plan !== "free") {
+      const p = planOf(plan);
+      req.limits = { accounts: p.accounts, people: p.peoplePerAccount, verifiedEmails: p.verifiedEmails };
+    } else {
+      const tier = verifyUnlock(req.unlock, req.domain, req.segment?.id);
+      if (!tier) return Response.json({ error: "Subscribe to Starter or Pro to see decision makers.", subscribe: true }, { status: 402 });
+      const t = TIERS[tier];
+      req.limits = { accounts: t.accounts, people: t.peoplePerAccount, verifiedEmails: t.verifiedEmails };
+    }
   }
 
   const encoder = new TextEncoder();

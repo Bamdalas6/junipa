@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, LogOut, X } from "lucide-react";
+import { CreditCard, Loader2, LogOut, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { flushPushes, uploadLocalWorkspaces } from "@/lib/cloud";
 import { clearAllWorkspaces } from "@/lib/store";
@@ -264,6 +264,9 @@ export function AccountButton({ className = "", signInClassName = "" }: { classN
             <p className="truncate text-[13px] text-muted">{user.email}</p>
           </div>
           <div className="my-1 h-px bg-line" />
+          <a href="/billing" role="menuitem" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[14px] hover:bg-subtle">
+            <CreditCard className="size-4 text-muted" /> Billing
+          </a>
           <button type="button" role="menuitem" onClick={signOut} className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-[14px] hover:bg-subtle">
             <LogOut className="size-4 text-muted" /> Sign out
           </button>

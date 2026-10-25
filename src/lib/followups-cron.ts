@@ -28,9 +28,16 @@ export async function runFollowUpCron(database: Database, now = Date.now(), dail
     )
     .run()) as { meta?: { changes?: number } };
 
+  // Follow-ups are part of Pro: only Pro subscribers' come due. Anyone else's stay
+  // scheduled, so they pick up again if the person subscribes (again).
   const { results: waiting } = await database
-    .prepare("SELECT user_id, COUNT(*) AS n FROM follow_ups WHERE status = 'scheduled' AND due_at <= ? GROUP BY user_id")
-    .bind(now)
+    .prepare(
+      `SELECT f.user_id, COUNT(*) AS n FROM follow_ups f
+       JOIN subscriptions s ON s.user_id = f.user_id AND s.plan = 'pro' AND s.status IN ('active', 'trialing', 'past_due')
+         AND (s.current_period_end IS NULL OR s.current_period_end > ?)
+       WHERE f.status = 'scheduled' AND f.due_at <= ? GROUP BY f.user_id`,
+    )
+    .bind(now - 3 * DAY, now)
     .all<{ user_id: string; n: number }>();
 
   let marked = 0;

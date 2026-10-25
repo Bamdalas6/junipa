@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { randomId, currentUser, fromThisSite } from "@/lib/auth";
+import { entitlement } from "@/lib/billing";
 import { db } from "@/lib/db";
 import { claudeJson, provider } from "@/lib/engine";
 import { geminiJson } from "@/lib/engine-gemini";
@@ -27,9 +28,10 @@ Warm and plain. DMs and WhatsApp under 45 words, emails under 80 words. Use the 
 Never invent facts, results, clients or numbers, about the brand or the lead: only mention what the notes above say. With no facts to use, ask one simple, specific question instead.
 Don't add a sign-off line or an unsubscribe line; the app adds those.`;
 
-async function signedIn(request: Request, params: Ctx["params"]) {
+async function signedIn(request: Request, params: Ctx["params"], needsPro = true) {
   const user = await currentUser(request);
   if (!user) return { error: Response.json({ error: "Sign in first." }, { status: 401 }) };
+  if (needsPro && (await entitlement(user.id)) !== "pro") return { error: Response.json({ error: "Automatic follow-ups are part of Pro.", subscribe: true }, { status: 402 }) };
   const { id } = await params;
   const lead = await ownLead(user.id, id);
   if (!lead) return { error: Response.json({ error: "Lead not found" }, { status: 404 }) };
@@ -142,7 +144,7 @@ export async function PUT(request: Request, { params }: Ctx) {
 
 export async function DELETE(request: Request, { params }: Ctx) {
   if (!fromThisSite(request)) return Response.json({ error: "Forbidden" }, { status: 403 });
-  const got = await signedIn(request, params);
+  const got = await signedIn(request, params, false);
   if (got.error) return got.error;
   await (await db()).prepare("UPDATE follow_ups SET status = 'cancelled' WHERE lead_id = ? AND status IN ('scheduled', 'due')").bind(got.id).run();
   return Response.json({ ok: true });

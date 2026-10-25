@@ -75,6 +75,30 @@ export const SCHEMA = [
     due_marked_at INTEGER,
     sent_at INTEGER
   )`,
+  // One subscription per account (Starter or Pro, monthly or yearly), mirrored from Bachs.
+  `CREATE TABLE IF NOT EXISTS subscriptions (
+    user_id TEXT PRIMARY KEY,
+    subscription_id TEXT NOT NULL,
+    customer_id TEXT,
+    plan TEXT NOT NULL,
+    interval TEXT NOT NULL,
+    status TEXT NOT NULL,
+    current_period_end INTEGER,
+    cancel_at_period_end INTEGER NOT NULL DEFAULT 0,
+    amount TEXT,
+    currency TEXT,
+    checked_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  )`,
+  // Checkouts started from Junia, so a returning customer is matched to their subscription.
+  `CREATE TABLE IF NOT EXISTS billing_checkouts (
+    checkout_id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    plan TEXT NOT NULL,
+    interval TEXT NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
   `CREATE INDEX IF NOT EXISTS follow_ups_lead ON follow_ups (lead_id)`,
   `CREATE INDEX IF NOT EXISTS follow_ups_due ON follow_ups (status, due_at)`,
 ];

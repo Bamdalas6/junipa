@@ -84,7 +84,9 @@ export interface Lead {
 export interface PipelineData {
   leads: Lead[];
   stats: { total: number; contacted: number; replied: number; replyRate: number; signedUp: number; due: number; sentToday: number };
-  /** null = unlimited (a paid campaign); otherwise the free plan's cap. */
+  /** null = unlimited (Pro); otherwise the cap for free and Starter. */
   limit: { used: number; max: number | null };
   dailyLimit: number;
+  /** Automatic follow-ups are part of Pro. */
+  followUps: boolean;
 }

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { B, BuildCanvas } from "@/components/Build";
 import { AccountButton, useAuth } from "@/components/Auth";
+import { IntervalToggle } from "@/components/Plans";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CommandBar, DetectNote, useIndustryDetection } from "@/components/CommandBar";
 import { MarketPicker } from "@/components/MarketPicker";
@@ -15,6 +16,8 @@ import type { Market } from "@/lib/geo";
 import { INDUSTRIES, getIndustry } from "@/lib/industries";
 import { PLATFORMS, parseHandle } from "@/lib/social-shared";
 import { deleteCloudWorkspaces, listCloudWorkspaces } from "@/lib/cloud";
+import type { Interval, PlanId } from "@/lib/plans";
+import { subscribe, useBilling } from "@/lib/useBilling";
 import { cleanDomain, clearAllWorkspaces, listWorkspaces, type WorkspaceSummary } from "@/lib/store";
 import { SAMPLE_TESTIMONIALS, TESTIMONIALS, type Testimonial } from "@/lib/testimonials";
 
@@ -653,16 +656,45 @@ function Orchestrator({ domain }: { domain: string }) {
 
 function Pricing({ onStart }: { onStart: () => void }) {
   const config = usePayConfig();
+  const { user, open } = useAuth();
+  const { status: billing } = useBilling([user]);
+  const [period, setPeriod] = useState<Interval>("monthly");
+  const [error, setError] = useState("");
   const free = ["Brand profile from your website", "Competitor map with live-checked sites", "Audience segments with pains and hooks", "10-12 prospect accounts per campaign", "Buying signals for each prospect"];
+  const choose = async (plan: PlanId) => {
+    setError("");
+    if (billing && !billing.enabled) return setError("Subscriptions open very soon. Start free in the meantime.");
+    if (billing && billing.plan !== "free") return void (window.location.href = "/billing");
+    const err = await subscribe(plan, period, open, "/#pricing");
+    if (err) setError(err);
+  };
   return (
     <div className="-mx-5 border-t border-line sm:-mx-8">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-8">
+        <IntervalToggle value={period} onChange={setPeriod} />
+        <p className="text-[13px] text-muted">Founding members keep their price for as long as they stay subscribed.</p>
+      </div>
       <div className="grid lg:grid-cols-3">
         <Plan name="Research" price="$0" unit="free forever" blurb="Steps 1-4: understand your market." features={free} cta="Start free" onClick={onStart} />
-        {(config?.tiers ?? []).map((t) => (
-          <Plan key={t.id} name={t.name} price={usd(t.price)} listPrice={t.listPrice > t.price ? usd(t.listPrice) : undefined} unit={config?.founding ? `per campaign · founding price` : "per campaign"} blurb={`${t.blurb}. Steps 5-6.`} features={t.features} cta={`Start with ${t.name}`} onClick={onStart} highlight={t.highlight} />
+        {(billing?.plans ?? []).map((p) => (
+          <Plan
+            key={p.id}
+            name={p.name}
+            price={usd(period === "monthly" ? p.monthly : p.yearly)}
+            unit={period === "monthly" ? "per month" : `per year · ${usd(p.monthly * 12 - p.yearly)} less than monthly`}
+            blurb={p.blurb}
+            features={p.features}
+            cta={billing?.plan === p.id ? "Manage your plan" : `Get ${p.name}`}
+            onClick={(e) => {
+              e.preventDefault();
+              void choose(p.id);
+            }}
+            highlight={p.highlight}
+          />
         ))}
-        {!config && [0, 1].map((i) => <div key={i} className="skeleton m-8 h-96 rounded-lg" />)}
+        {!billing && [0, 1].map((i) => <div key={i} className="skeleton m-8 h-96 rounded-lg" />)}
       </div>
+      {error && <p className="border-t border-line px-5 py-3 text-[13.5px] text-warn sm:px-8">{error}</p>}
       {config?.social && (
         <div className="flex flex-col gap-5 border-t border-line px-5 py-8 sm:px-8 lg:flex-row lg:items-center">
           <div className="flex-1">
@@ -689,7 +721,7 @@ function Pricing({ onStart }: { onStart: () => void }) {
   );
 }
 
-function Plan({ name, price, listPrice, unit, blurb, features, cta, onClick, highlight }: { name: string; price: string; listPrice?: string; unit: string; blurb: string; features: string[]; cta: string; onClick: () => void; highlight?: boolean }) {
+function Plan({ name, price, listPrice, unit, blurb, features, cta, onClick, highlight }: { name: string; price: string; listPrice?: string; unit: string; blurb: string; features: string[]; cta: string; onClick: (e: React.MouseEvent) => void; highlight?: boolean }) {
   return (
     <div className={`flex flex-col border-line px-5 py-10 sm:px-8 [&:not(:first-child)]:max-lg:border-t lg:[&:not(:first-child)]:border-l ${highlight ? "bg-white" : ""}`}>
       <B className="flex items-center gap-2">
