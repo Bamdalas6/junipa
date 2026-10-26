@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-display-face), var(--font-body), sans-serif;
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   --color-ink: #0b0b0f;
@@ -39,7 +39,6 @@ html {
 body {
   background: var(--color-paper);
   color: var(--color-ink);
-  font-feature-settings: "cv11", "ss01";
 }
 
 ::selection {
@@ -206,8 +205,8 @@ body {
 /* ---------- Landing page: design-canvas style, built live by agent cursors ---------- */
 
 .lp {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jb), ui-monospace, "SF Mono", Menlo, monospace;
   --color-ink: #121417;
   --color-ink-2: #3a3e45;
@@ -223,7 +222,6 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
-  font-feature-settings: "cv11", "ss01";
 }
 .lp ::selection {
   background: #0d99ff47;

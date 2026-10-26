@@ -33,7 +33,7 @@ export const PLAN_LIST = (prices?: Partial<Record<`${PlanId}_${Interval}`, numbe
     id: "starter",
     name: "Starter",
     monthly: prices?.starter_monthly ?? 19,
-    yearly: prices?.starter_yearly ?? 190,
+    yearly: prices?.starter_yearly ?? 209,
     blurb: "Find and reach the right buyers",
     features: [
       "Research workspace for your brand",
@@ -53,8 +53,8 @@ export const PLAN_LIST = (prices?: Partial<Record<`${PlanId}_${Interval}`, numbe
   {
     id: "pro",
     name: "Pro",
-    monthly: prices?.pro_monthly ?? 39,
-    yearly: prices?.pro_yearly ?? 390,
+    monthly: prices?.pro_monthly ?? 49,
+    yearly: prices?.pro_yearly ?? 539,
     blurb: "Turn replies into customers",
     features: [
       "Everything in Starter",

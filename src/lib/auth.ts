@@ -103,6 +103,42 @@ export async function upsertGoogleUser(g: { sub: string; email: string; name?: s
   return createUser({ email: g.email, name: g.name, googleSub: g.sub, avatar: g.picture });
 }
 
+/* ---------- Forgotten passwords ---------- */
+
+export const RESET_MINUTES = 60;
+
+/** A one-time reset token for the emailed link; earlier unused links for this account stop working. */
+export async function createPasswordReset(userId: string) {
+  const token = randomId();
+  const now = Date.now();
+  const database = await db();
+  await database.batch([
+    database.prepare("DELETE FROM password_resets WHERE user_id = ?").bind(userId),
+    database.prepare("INSERT INTO password_resets (id, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)").bind(await sha256(token), userId, now + RESET_MINUTES * 60_000, now),
+  ]);
+  return token;
+}
+
+/**
+ * Uses up a reset token and sets the new password. Every session on the account
+ * ends, so whoever knew the old password is signed out. Returns the user id, or
+ * null when the link is unknown, used or expired.
+ */
+export async function resetPassword(token: string, passwordHash: string) {
+  const database = await db();
+  const row = await database
+    .prepare("DELETE FROM password_resets WHERE id = ? RETURNING user_id, expires_at")
+    .bind(await sha256(token))
+    .first<{ user_id: string; expires_at: number }>();
+  if (!row || row.expires_at <= Date.now()) return null;
+  await database.batch([
+    database.prepare("UPDATE users SET password_hash = ? WHERE id = ?").bind(passwordHash, row.user_id),
+    database.prepare("DELETE FROM sessions WHERE user_id = ?").bind(row.user_id),
+    database.prepare("DELETE FROM password_resets WHERE user_id = ?").bind(row.user_id),
+  ]);
+  return row.user_id;
+}
+
 /* ---------- Sessions ---------- */
 
 export async function createSession(userId: string) {

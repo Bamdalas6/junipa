@@ -143,6 +143,7 @@ const sections: LegalSection[] = [
             ["Google", "Google sign-in; AI models (Gemini)", "Sign-in details; research context sent for AI processing"],
             ["Tavily", "Web search", "Search queries about businesses and roles"],
             ["Bachs", "Payments and subscriptions", "Your email, plan, payment and billing details"],
+            ["Resend", "Sending account emails, such as password reset links", "Your email address and the email's contents"],
             ["Anthropic (if used)", "AI models", "Research context sent for AI processing"],
             ["Hunter (if enabled)", "Checking whether a business email address is valid", "A decision maker's name and business domain"],
           ]}

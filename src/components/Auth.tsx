@@ -14,7 +14,7 @@ export interface AuthUser {
   avatar: string | null;
 }
 
-type Mode = "signup" | "signin";
+type Mode = "signup" | "signin" | "forgot";
 interface OpenOptions {
   mode?: Mode;
   /** One line above the form, e.g. why an account is needed right now. */
@@ -39,15 +39,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [ready, setReady] = useState(false);
   const [google, setGoogle] = useState(false);
+  const [reset, setReset] = useState(false);
   const [dialog, setDialog] = useState<(OpenOptions & { mode: Mode; error?: string }) | null>(null);
   const synced = useRef(false);
 
   const refresh = useCallback(async () => {
     const d = (await fetch("/api/auth/me", { cache: "no-store" })
       .then((r) => r.json())
-      .catch(() => ({ user: null, google: false }))) as { user: AuthUser | null; google: boolean };
+      .catch(() => ({ user: null, google: false, reset: false }))) as { user: AuthUser | null; google: boolean; reset?: boolean };
     setUser(d.user);
     setGoogle(d.google);
+    setReset(!!d.reset);
     setReady(true);
     // Research done before signing in moves into the account, once per page load.
     if (d.user && !synced.current) {
@@ -86,6 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         <AuthDialog
           {...dialog}
           google={google}
+          reset={reset}
           onClose={() => setDialog(null)}
           onSignedIn={async () => {
             await refresh();
@@ -104,15 +107,18 @@ function AuthDialog({
   reason,
   error: initialError,
   google,
+  reset,
   onClose,
   onSignedIn,
-}: OpenOptions & { mode: Mode; error?: string; google: boolean; onClose: () => void; onSignedIn: () => void }) {
+}: OpenOptions & { mode: Mode; error?: string; google: boolean; reset: boolean; onClose: () => void; onSignedIn: () => void }) {
   const [mode, setMode] = useState<Mode>(initialMode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(initialError ?? "");
+  /** The address a reset link was just sent to. */
+  const [sentTo, setSentTo] = useState("");
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -129,16 +135,25 @@ function AuthDialog({
     const res = await fetch(`/api/auth/${mode}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(mode === "signup" ? { name, email, password } : { email, password }),
+      body: JSON.stringify(mode === "signup" ? { name, email, password } : mode === "forgot" ? { email } : { email, password }),
     }).catch(() => null);
     const d = (await res?.json().catch(() => ({}))) as { error?: string } | undefined;
     setBusy(false);
     if (!res?.ok) return setError(d?.error ?? "Something went wrong. Try again.");
+    if (mode === "forgot") return setSentTo(email.trim());
     onSignedIn();
+  };
+
+  const switchTo = (m: Mode) => {
+    setMode(m);
+    setError("");
+    setSentTo("");
+    setPassword("");
   };
 
   const next = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
   const signup = mode === "signup";
+  const forgot = mode === "forgot";
   const field = "mt-1 h-11 w-full rounded-lg border border-line-2 bg-white px-3.5 text-[14.5px] text-ink outline-none placeholder:text-faint focus:border-accent focus:ring-3 focus:ring-accent/10";
 
   return (
@@ -148,11 +163,24 @@ function AuthDialog({
           <X className="size-4" />
         </button>
         <h2 id="auth-title" className="text-[21px] font-semibold tracking-[-0.02em]">
-          {signup ? "Create your free account" : "Welcome back"}
+          {signup ? "Create your free account" : forgot ? "Reset your password" : "Welcome back"}
         </h2>
-        <p className="mt-1.5 text-[14px] leading-relaxed text-muted">{reason ?? (signup ? "Save your research and pick it up on any device." : "Sign in to open your saved research.")}</p>
+        <p className="mt-1.5 text-[14px] leading-relaxed text-muted">
+          {forgot
+            ? "Enter your account's email and we'll send you a link to choose a new password."
+            : (reason ?? (signup ? "Save your research and pick it up on any device." : "Sign in to open your saved research."))}
+        </p>
 
-        {google && (
+        {forgot && sentTo && (
+          <div className="mt-5 rounded-lg border border-line bg-subtle p-4 text-[14px] leading-relaxed">
+            <p>
+              If there&apos;s a Junia account for <span className="break-all font-medium">{sentTo}</span>, a reset link is on its way. It works once and expires in an hour.
+            </p>
+            <p className="mt-2 text-[13px] text-muted">Nothing after a few minutes? Check your spam folder, or try again.</p>
+          </div>
+        )}
+
+        {google && !forgot && (
           <>
             <a
               href={`/api/auth/google?next=${encodeURIComponent(next)}`}
@@ -166,7 +194,7 @@ function AuthDialog({
           </>
         )}
 
-        <form onSubmit={submit} className={google ? "space-y-3" : "mt-5 space-y-3"}>
+        <form onSubmit={submit} hidden={forgot && !!sentTo} className={google && !forgot ? "space-y-3" : "mt-5 space-y-3"}>
           {signup && (
             <label className="block">
               <span className="text-[12.5px] font-medium text-ink-2">Name (optional)</span>
@@ -177,19 +205,28 @@ function AuthDialog({
             <span className="text-[12.5px] font-medium text-ink-2">Email</span>
             <input ref={emailRef} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="you@brand.com" className={field} />
           </label>
-          <label className="block">
-            <span className="text-[12.5px] font-medium text-ink-2">Password</span>
-            <input
-              type="password"
-              required
-              minLength={signup ? 8 : undefined}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={signup ? "new-password" : "current-password"}
-              placeholder={signup ? "At least 8 characters" : ""}
-              className={field}
-            />
-          </label>
+          {!forgot && (
+            <label className="block">
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="text-[12.5px] font-medium text-ink-2">Password</span>
+                {!signup && reset && (
+                  <button type="button" onClick={() => switchTo("forgot")} className="text-[12.5px] text-muted underline-offset-2 hover:text-ink hover:underline">
+                    Forgot password?
+                  </button>
+                )}
+              </span>
+              <input
+                type="password"
+                required
+                minLength={signup ? 8 : undefined}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={signup ? "new-password" : "current-password"}
+                placeholder={signup ? "At least 8 characters" : ""}
+                className={field}
+              />
+            </label>
+          )}
           {error && <p className="text-[13px] text-bad">{error}</p>}
           <button
             type="submit"
@@ -197,7 +234,7 @@ function AuthDialog({
             className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-ink text-[14.5px] font-semibold text-white hover:bg-ink-2 disabled:opacity-60"
           >
             {busy && <Loader2 className="spin size-4" />}
-            {signup ? "Create account" : "Sign in"}
+            {signup ? "Create account" : forgot ? "Send reset link" : "Sign in"}
           </button>
         </form>
 
@@ -215,16 +252,9 @@ function AuthDialog({
           </p>
         )}
         <p className="mt-4 text-center text-[13.5px] text-muted">
-          {signup ? "Already have an account? " : "New to Junia? "}
-          <button
-            type="button"
-            onClick={() => {
-              setMode(signup ? "signin" : "signup");
-              setError("");
-            }}
-            className="font-medium text-ink underline-offset-2 hover:underline"
-          >
-            {signup ? "Sign in" : "Create an account"}
+          {signup ? "Already have an account? " : forgot ? "Remembered it? " : "New to Junia? "}
+          <button type="button" onClick={() => switchTo(signup || forgot ? "signin" : "signup")} className="font-medium text-ink underline-offset-2 hover:underline">
+            {signup || forgot ? "Sign in" : "Create an account"}
           </button>
         </p>
       </div>

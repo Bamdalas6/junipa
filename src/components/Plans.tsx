@@ -6,7 +6,7 @@ import type { BillingStatus, Interval, PlanId } from "@/lib/plans";
 import { money, subscribe } from "@/lib/useBilling";
 import { useAuth } from "./Auth";
 
-/** Monthly / yearly switch. Yearly is ten months' price: two months free. */
+/** Monthly / yearly switch. Yearly is eleven months' price: one month free. */
 export function IntervalToggle({ value, onChange }: { value: Interval; onChange: (v: Interval) => void }) {
   return (
     <div className="inline-flex items-center gap-1 rounded-lg border border-line bg-white p-1" role="radiogroup" aria-label="Billing period">
@@ -20,7 +20,7 @@ export function IntervalToggle({ value, onChange }: { value: Interval; onChange:
           className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-[13px] font-medium ${value === v ? "bg-ink text-white" : "text-ink-2 hover:bg-subtle"}`}
         >
           {v === "monthly" ? "Monthly" : "Yearly"}
-          {v === "yearly" && <span className={`rounded px-1 py-px font-mono text-[10.5px] ${value === v ? "bg-white/20" : "bg-good-soft text-good"}`}>2 months free</span>}
+          {v === "yearly" && <span className={`rounded px-1 py-px font-mono text-[10.5px] ${value === v ? "bg-white/20" : "bg-good-soft text-good"}`}>1 month free</span>}
         </button>
       ))}
     </div>

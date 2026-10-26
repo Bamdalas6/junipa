@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Inter, JetBrains_Mono, Poppins, Unbounded } from "next/font/google";
+import { Bricolage_Grotesque, Geist_Mono, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/Auth";
 import "./globals.css";
 
-const body = Poppins({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-body" });
-const display = Unbounded({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--font-display-face" });
+// Text and headings: Bricolage Grotesque (a variable font, so every weight comes in one file).
+const sans = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
+// Code, data and labels.
 const mono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" });
-// Landing page type (canvas style)
-const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-jb" });
 
 // Before first paint: apply a saved light/dark pick (see ThemeToggle), and on the landing
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${body.variable} ${display.variable} ${mono.variable} ${inter.variable} ${jetbrains.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${sans.variable} ${mono.variable} ${jetbrains.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: BUILD_BOOT }} />
       </head>

@@ -18,6 +18,14 @@ export const SCHEMA = [
     created_at INTEGER NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS sessions_user ON sessions (user_id)`,
+  // Forgotten-password links. Like sessions, only a hash of each emailed token is stored.
+  `CREATE TABLE IF NOT EXISTS password_resets (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    created_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS password_resets_user ON password_resets (user_id)`,
   `CREATE TABLE IF NOT EXISTS workspaces (
     user_id TEXT NOT NULL,
     domain TEXT NOT NULL,
