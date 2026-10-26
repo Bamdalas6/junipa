@@ -253,7 +253,7 @@ export default function Home() {
                     </button>
                   )}
                 </B>
-                <div className="mt-2.5 min-h-5 text-[13px]">
+                <B className="mt-2.5 min-h-5 text-[13px]">
                   {error ? (
                     <span className="text-bad">{error}</span>
                   ) : socialLink ? (
@@ -268,7 +268,7 @@ export default function Home() {
                   ) : (
                     <DetectNote detect={detect} auto={auto} industry={industry} />
                   )}
-                </div>
+                </B>
                 {showGoal && (
                   <input
                     value={goal}
