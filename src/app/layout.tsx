@@ -14,9 +14,17 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], v
 // page hide its parts until the agent cursors build them (see Build.tsx).
 const BUILD_BOOT = `try{var t=localStorage.getItem("junia-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}try{if(location.pathname==="/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("lp-build")}catch(e){}`;
 
+const TITLE = "Junipa: outbound research on autopilot";
+const DESCRIPTION = "Type your website. Junipa's agent researches your brand, competitors and buyers, then hands you verified prospects and ready-to-send sequences.";
+
+// Link previews (WhatsApp, X, LinkedIn, Slack) use opengraph-image.png and twitter-image.png
+// in this folder; metadataBase turns their paths into full junipa.app addresses.
 export const metadata: Metadata = {
-  title: "Junipa: outbound research on autopilot",
-  description: "Type your website. Junipa's agent researches your brand, competitors and buyers, then hands you verified prospects and ready-to-send sequences.",
+  metadataBase: new URL("https://junipa.app"),
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { type: "website", siteName: "Junipa", title: TITLE, description: DESCRIPTION },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

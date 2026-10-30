@@ -7,6 +7,9 @@
   // custom-worker.ts wraps .open-next/worker.js (the Next.js app) and adds the follow-up cron.
   "main": "custom-worker.ts",
   "compatibility_date": "2026-10-01",
+  // Only junipa.app serves the site: no *.workers.dev copy and no per-version preview addresses.
+  "workers_dev": false,
+  "preview_urls": false,
   // nodejs_compat: Node APIs (crypto, streams) for the Next.js server.
   // global_fetch_strictly_public: fetch() can only reach the public internet,
   // so research can never be pointed at internal addresses.
