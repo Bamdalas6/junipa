@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Check, Link2, Loader2, Lock, ShieldCheck, X, Printer, RotateCw, Sparkles } from "lucide-react";
+import { CONTACT } from "@/lib/contact";
 import { clearPendingCheckout, pendingCheckout, rememberCheckout } from "@/lib/pending-pay";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -462,6 +463,9 @@ export default function SocialView({
         <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-4 border-x border-line px-5 pb-16 pt-12 sm:px-8">
           <Logo />
           <span className="flex-1" />
+          <a href={`mailto:${CONTACT.hello}`} className="font-mono text-[12px] text-muted hover:text-accent">
+            {CONTACT.hello}
+          </a>
           <span className="font-mono text-[12px] text-muted">© 2026 Junipa · social growth plans</span>
         </div>
       </footer>
@@ -687,6 +691,12 @@ function LockedPlan({ result, onUnlocked }: { result: Result; onUnlocked: (token
             {error && <p className="mt-2 text-[13px] text-bad">{error}</p>}
             <p className="mt-5 flex items-center gap-1.5 font-mono text-[12px] text-muted">
               <ShieldCheck className="size-3.5 text-good" /> secure checkout by {config?.provider === "paystack" ? "Paystack" : "Bachs"}
+            </p>
+            <p className="mt-2 text-[12px] text-muted">
+              Payment trouble?{" "}
+              <a href={`mailto:${CONTACT.support}`} className="text-accent hover:underline">
+                {CONTACT.support}
+              </a>
             </p>
           </div>
         </div>

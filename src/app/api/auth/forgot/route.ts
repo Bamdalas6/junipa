@@ -2,6 +2,7 @@ import { EMAIL, RESET_MINUTES, createPasswordReset, findUserByEmail, fromThisSit
 import { buttonEmail, emailConfigured, sendEmail } from "@/lib/email";
 import { badRequest, clientIp, rateLimit, rateLimitKey, readJson, siteOrigin } from "@/lib/guard";
 import { AUTH_IP, sharedLimit } from "@/lib/ratelimit";
+import { CONTACT } from "@/lib/contact";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 // either way, so this can't be used to find out who has an account.
 export async function POST(request: Request) {
   if (!fromThisSite(request)) return Response.json({ error: "Forbidden" }, { status: 403 });
-  if (!emailConfigured()) return Response.json({ error: "Password reset isn't available yet. Email privacy@junipa.app and we'll help." }, { status: 503 });
+  if (!emailConfigured()) return Response.json({ error: `Password reset isn't available yet. Email ${CONTACT.support} and we'll help.` }, { status: 503 });
   const limited = rateLimit(request, "auth-forgot", 5, 15 * 60_000);
   if (limited) return limited;
   const shared = await sharedLimit(AUTH_IP, `forgot:${clientIp(request)}`);

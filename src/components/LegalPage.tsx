@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
 import { Logo } from "./ui";
+import { CONTACT } from "@/lib/contact";
 
 // Layout for the privacy policy and terms: a readable column with a table of contents.
 
@@ -8,7 +9,7 @@ export const LEGAL = {
   operator: "Junipa's team",
   product: "Junipa",
   site: "junipa.app",
-  email: "privacy@junipa.app",
+  email: CONTACT.privacy,
   updated: "25 October 2026",
 };
 
@@ -24,6 +25,7 @@ export function LegalPage({
   sections,
   other,
   updated = LEGAL.updated,
+  email = LEGAL.email,
 }: {
   title: string;
   intro: React.ReactNode;
@@ -31,6 +33,8 @@ export function LegalPage({
   other: { href: string; label: string };
   /** When this page last changed, if later than LEGAL.updated. */
   updated?: string;
+  /** Where questions about this page go. */
+  email?: string;
 }) {
   return (
     <main className="lp lp-app min-h-dvh">
@@ -74,8 +78,8 @@ export function LegalPage({
           ))}
           <p className="mt-12 border-t border-line pt-6 text-[13.5px] text-muted">
             Questions about this page? Email{" "}
-            <a href={`mailto:${LEGAL.email}`} className="text-accent hover:underline">
-              {LEGAL.email}
+            <a href={`mailto:${email}`} className="text-accent hover:underline">
+              {email}
             </a>
             . See also our <Link href={other.href} className="text-accent hover:underline">{other.label.toLowerCase()}</Link>.
           </p>

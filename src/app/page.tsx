@@ -12,6 +12,7 @@ import { CommandBar, DetectNote, useIndustryDetection } from "@/components/Comma
 import { MarketPicker } from "@/components/MarketPicker";
 import { usd, usePayConfig } from "@/components/Paywall";
 import { Badge, Favicon, Logo } from "@/components/ui";
+import { CONTACT } from "@/lib/contact";
 import type { Market } from "@/lib/geo";
 import { INDUSTRIES, getIndustry } from "@/lib/industries";
 import { PLATFORMS, parseHandle } from "@/lib/social-shared";
@@ -476,7 +477,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="pb-28">
-          <div className="mx-auto grid max-w-[1180px] gap-10 border-x border-line px-5 py-12 sm:grid-cols-2 sm:px-8 lg:grid-cols-[minmax(0,1fr)_150px_150px_150px_150px]">
+          <div className="mx-auto grid max-w-[1180px] gap-10 border-x border-line px-5 py-12 sm:grid-cols-2 sm:px-8 lg:grid-cols-[minmax(0,1fr)_150px_150px_150px_150px_160px]">
             <div>
               <B>
                 <Logo />
@@ -489,7 +490,7 @@ export default function Home() {
               <B key={title} as="nav" className="flex flex-col gap-2.5 text-[14.5px]">
                 <span className="font-semibold">{title}</span>
                 {links.map(([label, href]) =>
-                  href.startsWith("#") ? (
+                  href.startsWith("#") || href.startsWith("mailto:") ? (
                     <a key={label} href={href} className="text-ink-2 hover:text-accent">
                       {label}
                     </a>
@@ -591,6 +592,7 @@ const FOOTER: [string, [string, string][]][] = [
   ["Try it", [["Live demo", DEMO_HREF], ["Grow socials", "/social"]]],
   ["Start", [["Run my pipeline", "#start"]]],
   ["Legal", [["Privacy Policy", "/privacy"], ["Terms of Service", "/terms"]]],
+  ["Contact", [CONTACT.hello, CONTACT.support, CONTACT.privacy].map((a): [string, string] => [a, `mailto:${a}`])],
 ];
 
 /* ---------- Hero: live orchestration diagram ---------- */

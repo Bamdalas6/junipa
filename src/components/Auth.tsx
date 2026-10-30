@@ -4,6 +4,7 @@ import { CreditCard, Loader2, LogOut, X } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { flushPushes, uploadLocalWorkspaces } from "@/lib/cloud";
 import { clearAllWorkspaces } from "@/lib/store";
+import { CONTACT } from "@/lib/contact";
 
 // Accounts in the browser: who is signed in, the sign-up / sign-in box, and the
 // account menu. Sessions live in an http-only cookie set by /api/auth/*.
@@ -176,7 +177,13 @@ function AuthDialog({
             <p>
               If there&apos;s a Junipa account for <span className="break-all font-medium">{sentTo}</span>, a reset link is on its way. It works once and expires in an hour.
             </p>
-            <p className="mt-2 text-[13px] text-muted">Nothing after a few minutes? Check your spam folder, or try again.</p>
+            <p className="mt-2 text-[13px] text-muted">
+              Nothing after a few minutes? Check your spam folder, try again, or email{" "}
+              <a href={`mailto:${CONTACT.support}`} className="text-accent hover:underline">
+                {CONTACT.support}
+              </a>
+              .
+            </p>
           </div>
         )}
 

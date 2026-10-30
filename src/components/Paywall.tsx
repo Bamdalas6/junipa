@@ -1,6 +1,7 @@
 "use client";
 
 import { Check, CreditCard, Landmark, Loader2, Lock, ShieldCheck } from "lucide-react";
+import { CONTACT } from "@/lib/contact";
 import { rememberCheckout } from "@/lib/pending-pay";
 import { useEffect, useState } from "react";
 import { Badge, Button } from "./ui";
@@ -215,6 +216,12 @@ export function Paywall({
           </span>
           <span className="inline-flex items-center gap-1">
             <CreditCard className="size-3.5" /> Card
+          </span>
+          <span>
+            Payment trouble?{" "}
+            <a href={`mailto:${CONTACT.support}`} className="text-accent hover:underline">
+              {CONTACT.support}
+            </a>
           </span>
           {config?.provider === "paystack" && (
             <span className="inline-flex items-center gap-1">

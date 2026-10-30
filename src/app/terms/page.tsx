@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { LEGAL, LegalPage, Ul, type LegalSection } from "@/components/LegalPage";
+import { CONTACT } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Terms of Service · Junipa",
@@ -9,6 +10,12 @@ export const metadata: Metadata = {
 const mail = (
   <a href={`mailto:${LEGAL.email}`} className="text-accent hover:underline">
     {LEGAL.email}
+  </a>
+);
+
+const support = (
+  <a href={`mailto:${CONTACT.support}`} className="text-accent hover:underline">
+    {CONTACT.support}
   </a>
 );
 
@@ -231,7 +238,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          If you have a problem, email {mail} first: most issues can be solved quickly, and we will try in good faith for 30 days before either of us starts formal
+          If you have a problem, email {support} first: most issues can be solved quickly, and we will try in good faith for 30 days before either of us starts formal
           proceedings.
         </p>
         <p>
@@ -257,7 +264,7 @@ const sections: LegalSection[] = [
         <li>If we don&apos;t enforce a right straight away, we don&apos;t give it up.</li>
         <li>You may not transfer these terms without our consent; we may transfer them to a business that takes over Junipa, and will tell you if we do.</li>
         <li>We aren&apos;t responsible for delays or failures caused by events beyond our reasonable control.</li>
-        <li>We may send you notices by email to your account address; you can send notices to {LEGAL.email}.</li>
+        <li>We may send you notices by email to your account address; you can send notices to {CONTACT.hello}.</li>
       </Ul>
     ),
   },
@@ -267,6 +274,7 @@ export default function TermsPage() {
   return (
     <LegalPage
       title="Terms of Service"
+      email={CONTACT.hello}
       other={{ href: "/privacy", label: "Privacy Policy" }}
       intro={
         <p className="rounded-[10px] border border-line bg-white p-4 text-[14px]">

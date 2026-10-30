@@ -3,6 +3,7 @@
 import { ArrowLeft, CheckCircle2, ExternalLink, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { CONTACT } from "@/lib/contact";
 import type { BillingStatus } from "@/lib/plans";
 import { money, useBilling } from "@/lib/useBilling";
 import { AccountButton, useAuth } from "./Auth";
@@ -101,12 +102,23 @@ export default function BillingView({ confirming }: { confirming?: boolean }) {
             )}
             {confirm === "pending" && (
               <p className="mt-5 rounded-[12px] border border-warn/30 bg-warn-soft p-4 text-[14px] text-ink-2">
-                Bachs hasn&apos;t confirmed the payment yet. If you completed checkout, refresh this page in a minute.
+                Bachs hasn&apos;t confirmed the payment yet. If you completed checkout, refresh this page in a minute. Still waiting after that? Email{" "}
+                <a href={`mailto:${CONTACT.support}`} className="text-accent hover:underline">
+                  {CONTACT.support}
+                </a>
+                .
               </p>
             )}
 
             <CurrentPlan status={status} onManage={manage} busy={portalBusy} />
             {error && <p className="mt-2 text-[13px] text-bad">{error}</p>}
+            <p className="mt-3 text-[13px] text-muted">
+              Questions about a charge or your plan? Email{" "}
+              <a href={`mailto:${CONTACT.support}`} className="text-accent hover:underline">
+                {CONTACT.support}
+              </a>
+              .
+            </p>
 
             {status?.plan === "free" && (
               <section className="mt-8">

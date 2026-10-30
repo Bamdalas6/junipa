@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/ui";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CONTACT } from "@/lib/contact";
 
 const DEMO_HREF = "/w/lagos-label.example?industry=fashion&demo=1";
 
@@ -41,7 +42,12 @@ export default function NotFound() {
       </section>
 
       <footer>
-        <div className="mx-auto max-w-[1180px] border-x border-line px-5 py-10 font-mono text-[12px] text-muted sm:px-8">© 2026 Junipa</div>
+        <div className="mx-auto flex max-w-[1180px] flex-wrap gap-x-6 gap-y-2 border-x border-line px-5 py-10 font-mono text-[12px] text-muted sm:px-8">
+          <span>© 2026 Junipa</span>
+          <a href={`mailto:${CONTACT.hello}`} className="hover:text-accent">
+            {CONTACT.hello}
+          </a>
+        </div>
       </footer>
     </main>
   );
