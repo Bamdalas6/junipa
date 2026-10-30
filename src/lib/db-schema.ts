@@ -144,6 +144,21 @@ export const SCHEMA = [
     interval TEXT NOT NULL,
     created_at INTEGER NOT NULL
   )`,
+  // Every payment received: a new subscription, each renewal, and one-time purchases.
+  // kind: new | renewal | one_time. product: starter_monthly, pro_yearly, ..., campaign_pro, social.
+  // The id is derived from the payment (subscription + period, or the payment reference), so
+  // recording the same payment twice keeps one row.
+  `CREATE TABLE IF NOT EXISTS payments (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    kind TEXT NOT NULL,
+    product TEXT NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    reference TEXT,
+    paid_at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS payments_paid_at ON payments (paid_at)`,
   `CREATE INDEX IF NOT EXISTS follow_ups_lead ON follow_ups (lead_id)`,
   `CREATE INDEX IF NOT EXISTS follow_ups_due ON follow_ups (status, due_at)`,
 ];

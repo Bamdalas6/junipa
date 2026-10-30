@@ -1,5 +1,7 @@
+import { currentUser } from "@/lib/auth";
+import { recordPayment } from "@/lib/billing";
 import { rateLimit } from "@/lib/guard";
-import { confirmPayment, confirmSocialPayment, paymentsEnabled, signSocial, signUnlock } from "@/lib/payments";
+import { CURRENCY, SOCIAL, TIERS, confirmPayment, confirmSocialPayment, paymentsEnabled, signSocial, signUnlock } from "@/lib/payments";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +19,7 @@ export async function GET(request: Request) {
     if (!paymentsEnabled() || !reference || !/^[a-f0-9]{20}$/.test(key)) return Response.json({ paid: false }, { status: 400 });
     try {
       const paid = await confirmSocialPayment(reference, key);
+      if (paid) await recordPayment({ id: `pay:${reference}`, userId: (await currentUser(request))?.id ?? null, kind: "one_time", product: "social", amount: SOCIAL.price, currency: CURRENCY, reference });
       return Response.json(paid ? { paid: true, token: signSocial(key, reference) } : { paid: false });
     } catch (err) {
       console.error("[pay:verify:social]", err);
@@ -26,6 +29,8 @@ export async function GET(request: Request) {
   if (!paymentsEnabled() || !reference || !domain || !campaign) return Response.json({ paid: false }, { status: 400 });
   try {
     const tier = await confirmPayment(reference, domain, campaign);
+    if (tier)
+      await recordPayment({ id: `pay:${reference}`, userId: (await currentUser(request))?.id ?? null, kind: "one_time", product: `campaign_${tier}`, amount: TIERS[tier].price, currency: CURRENCY, reference });
     return Response.json(tier ? { paid: true, tier, token: signUnlock(domain, campaign, tier, reference) } : { paid: false });
   } catch (err) {
     console.error("[pay:verify]", err);

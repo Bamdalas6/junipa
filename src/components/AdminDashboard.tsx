@@ -4,16 +4,17 @@ import { ArrowDownRight, ArrowUpRight, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Range, Row, SiteStats } from "@/lib/analytics-stats";
+import type { Money, PaymentStats } from "@/lib/payment-stats";
 import { AccountButton } from "./Auth";
 import { ThemeToggle } from "./ThemeToggle";
 import { Logo } from "./ui";
 
-// The admin dashboard: who visits, what they look at, and how far they get. Data comes
-// from /api/admin/analytics and refreshes every minute.
+// The owner's dashboard at /mama: who visits, what they explore and how far they get
+// (from /api/mama/stats), and the payments received (from /api/mama/payments). The view
+// on screen refreshes every minute.
 
 const RANGE_LABEL: Record<Range, string> = { "24h": "24 hours", "7d": "7 days", "30d": "30 days", "90d": "90 days" };
-type Metric = "visitors" | "views" | "searches";
-const METRIC_LABEL: Record<Metric, string> = { visitors: "Visitors", views: "Page views", searches: "Searches" };
+type View = "visitors" | "payments";
 const STEP_LABEL: Record<string, string> = {
   profile: "Brand profile",
   competitors: "Competitors",
@@ -35,6 +36,42 @@ const PAGE_LABEL: Record<string, string> = {
 };
 
 const num = (n: number) => n.toLocaleString("en-US");
+const cash = (cents: number, currency = "USD") =>
+  new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
+/** Totals in more than one currency are listed side by side; none at all reads $0. */
+function money(m: Money) {
+  const parts = Object.entries(m).filter(([, c]) => c);
+  return parts.length ? parts.map(([cur, c]) => cash(c, cur)).join(" + ") : "$0";
+}
+const PRODUCT_LABEL: Record<string, string> = {
+  starter_monthly: "Starter · monthly",
+  starter_yearly: "Starter · yearly",
+  pro_monthly: "Pro · monthly",
+  pro_yearly: "Pro · yearly",
+  campaign_starter: "Campaign unlock · Starter",
+  campaign_pro: "Campaign unlock · Pro",
+  social: "Social growth plan",
+};
+const KIND_LABEL: Record<string, string> = { new: "New subscription", renewal: "Renewal", one_time: "One-time" };
+const STATUS_LABEL: Record<string, string> = { active: "Active", trialing: "Trial", past_due: "Payment failed, retrying", canceled: "Cancelled", unpaid: "Unpaid" };
+const day = (t: number) => new Date(t).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+
+/** One line on the trend chart: how to show its numbers and sum them up. */
+interface MetricDef {
+  key: string;
+  label: string;
+  format: (n: number) => string;
+  summary: (total: number) => string;
+}
+const VISIT_METRICS: MetricDef[] = [
+  { key: "visitors", label: "Visitors", format: num, summary: (t) => `${num(t)} ${t === 1 ? "visitor" : "visitors"}` },
+  { key: "views", label: "Page views", format: num, summary: (t) => `${num(t)} ${t === 1 ? "page view" : "page views"}` },
+  { key: "searches", label: "Searches", format: num, summary: (t) => `${num(t)} ${t === 1 ? "search" : "searches"}` },
+];
+const PAY_METRICS: MetricDef[] = [
+  { key: "cents", label: "Revenue (USD)", format: (c) => cash(c), summary: (t) => `${cash(t)} received` },
+  { key: "count", label: "Payments", format: num, summary: (t) => `${num(t)} ${t === 1 ? "payment" : "payments"}` },
+];
 function duration(ms: number | null | undefined) {
   if (ms == null) return "–";
   const s = Math.round(ms / 1000);
@@ -59,33 +96,41 @@ function countryName(code: string | null) {
 }
 
 export default function AdminDashboard() {
+  const [view, setView] = useState<View>("visitors");
   const [range, setRange] = useState<Range>("7d");
-  const [metric, setMetric] = useState<Metric>("visitors");
-  const [data, setData] = useState<SiteStats | null>(null);
+  const [visits, setVisits] = useState<SiteStats | null>(null);
+  const [payments, setPayments] = useState<PaymentStats | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const latest = useRef(0);
 
-  const load = useCallback(async (r: Range) => {
+  const load = useCallback(async (v: View, r: Range) => {
+    const id = ++latest.current;
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/analytics?range=${r}&tz=${-new Date().getTimezoneOffset()}`, { cache: "no-store" });
-      if (res.status === 404) throw new Error("You're signed out or not an admin any more. Sign in with Google again.");
+      const res = await fetch(`/api/mama/${v === "visitors" ? "stats" : "payments"}?range=${r}&tz=${-new Date().getTimezoneOffset()}`, { cache: "no-store" });
+      if (res.status === 404) throw new Error("You're signed out, or this account can't open the dashboard. Sign in with Google again.");
       if (!res.ok) throw new Error("Couldn't load the numbers. Try again.");
-      setData((await res.json()) as SiteStats);
+      const d = await res.json();
+      // A newer request (another view or range) has started: drop this answer.
+      if (id !== latest.current) return;
+      if (v === "visitors") setVisits(d as SiteStats);
+      else setPayments(d as PaymentStats);
       setError("");
     } catch (e) {
-      setError((e as Error).message);
+      if (id === latest.current) setError((e as Error).message);
     } finally {
-      setLoading(false);
+      if (id === latest.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    load(range);
-    const t = setInterval(() => document.visibilityState === "visible" && load(range), 60_000);
+    load(view, range);
+    const t = setInterval(() => document.visibilityState === "visible" && load(view, range), 60_000);
     return () => clearInterval(t);
-  }, [range, load]);
+  }, [view, range, load]);
 
+  const shown = view === "visitors" ? visits : payments;
   return (
     <main className="lp lp-app min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur-md">
@@ -94,12 +139,12 @@ export default function AdminDashboard() {
             <Logo compact />
           </Link>
           <span className="text-line-2">/</span>
-          <span className="text-sm font-medium">Admin</span>
+          <span className="text-sm font-medium">Mama</span>
           <span className="flex-1" />
-          {data && (
+          {visits && (
             <span className="hidden items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[12.5px] sm:inline-flex" title="Visitors with a page view in the last 5 minutes">
               <span className="size-1.5 rounded-full bg-good" aria-hidden />
-              {num(data.liveNow)} on the site now
+              {num(visits.liveNow)} on the site now
             </span>
           )}
           <ThemeToggle className="size-8" />
@@ -110,14 +155,19 @@ export default function AdminDashboard() {
       <div className="mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Visitors</h1>
-            <p className="mt-0.5 text-[13.5px] text-muted">Who comes to junipa.app, what they explore and how far they get. Visitors are counted once a day; your own visits aren&apos;t counted.</p>
+            <h1 className="text-[26px] font-semibold tracking-[-0.02em]">{view === "visitors" ? "Visitors" : "Payments"}</h1>
+            <p className="mt-0.5 text-[13.5px] text-muted">
+              {view === "visitors"
+                ? "Who comes to junipa.app, what they explore and how far they get. Visitors are counted once a day; your own visits aren't counted."
+                : "Money received: new subscriptions, renewals and one-time purchases, as Junia recorded them when each payment was confirmed."}
+            </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Segmented value={view} options={["visitors", "payments"] as View[]} label={(v) => (v === "visitors" ? "Visitors" : "Payments")} onChange={setView} ariaLabel="Dashboard" />
             <Segmented value={range} options={Object.keys(RANGE_LABEL) as Range[]} label={(r) => r} onChange={setRange} ariaLabel="Time range" />
             <button
               type="button"
-              onClick={() => load(range)}
+              onClick={() => load(view, range)}
               aria-label="Refresh"
               className="grid size-9 place-items-center rounded-lg border border-line-2 bg-white text-muted hover:text-ink"
             >
@@ -128,93 +178,226 @@ export default function AdminDashboard() {
 
         {error && <p className="mt-4 rounded-lg border border-bad/30 bg-bad-soft px-3 py-2 text-[13.5px] text-bad">{error}</p>}
 
-        {!data ? (
+        {!shown ? (
           <div className="grid h-60 place-items-center">
             <Loader2 className="spin size-5 text-muted" />
           </div>
+        ) : view === "visitors" ? (
+          <VisitorsView data={visits!} range={range} />
         ) : (
-          <>
-            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
-              <Kpi label="Visitors" value={num(data.totals.visitors)} now={data.totals.visitors} before={data.previous.visitors} />
-              <Kpi label="Page views" value={num(data.totals.views)} now={data.totals.views} before={data.previous.views} />
-              <Kpi label="Avg. time on page" value={duration(data.totals.avgMs)} now={data.totals.avgMs ?? 0} before={data.previous.avgMs ?? 0} />
-              <Kpi label="Searches started" value={num(data.totals.searches)} now={data.totals.searches} before={data.previous.searches} />
-              <Kpi label="Sign-ups" value={num(data.totals.signups)} now={data.totals.signups} before={data.previous.signups} />
-            </div>
-
-            <Card className="mt-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <h2 className="text-[15px] font-semibold">
-                  {METRIC_LABEL[metric]} <span className="font-normal text-muted">· last {RANGE_LABEL[range]}</span>
-                </h2>
-                <Segmented value={metric} options={["visitors", "views", "searches"] as Metric[]} label={(m) => METRIC_LABEL[m]} onChange={setMetric} ariaLabel="Chart metric" />
-              </div>
-              <TrendChart series={data.series} metric={metric} hourly={range === "24h"} />
-            </Card>
-
-            <div className="mt-3 grid gap-3 lg:grid-cols-2">
-              <Card>
-                <CardHead title="Pages they explore" hint="Visitors · views · avg. time" />
-                <BarList
-                  rows={data.pages.map((p) => ({ ...p, key: PAGE_LABEL[p.key] ? `${PAGE_LABEL[p.key]}` : p.key, sub: PAGE_LABEL[p.key] ? p.key : undefined }))}
-                  value={(r) => r.visitors}
-                  extra={(r) => `${num(r.views ?? 0)} · ${duration(r.avgMs)}`}
-                  empty="No page views yet."
-                />
-              </Card>
-              <Card>
-                <CardHead title="Brands researched" hint="Searches · people" />
-                <BarList
-                  rows={data.brands.map((b) => ({ key: b.key, sub: b.demo ? "demo" : undefined, visitors: b.searches, views: b.visitors }))}
-                  value={(r) => r.visitors}
-                  extra={(r) => `${num(r.views ?? 0)} ${r.views === 1 ? "person" : "people"}`}
-                  empty="No live searches yet."
-                />
-                {data.steps.length > 0 && (
-                  <div className="mt-4 border-t border-line pt-3">
-                    <p className="mb-2 font-mono text-[11.5px] text-muted">Research steps started</p>
-                    <BarList rows={data.steps.map((s) => ({ key: STEP_LABEL[s.key] ?? s.key, visitors: s.searches }))} value={(r) => r.visitors} empty="" />
-                  </div>
-                )}
-              </Card>
-              <Card>
-                <CardHead title="Where they come from" hint="Visitors" />
-                <BarList rows={data.referrers.map((r) => ({ ...r, key: r.key || "Direct / no referrer" }))} value={(r) => r.visitors} empty="No visits yet." />
-                {data.campaigns.length > 0 && (
-                  <div className="mt-4 border-t border-line pt-3">
-                    <p className="mb-2 font-mono text-[11.5px] text-muted">Campaign links (utm)</p>
-                    <BarList rows={data.campaigns} value={(r) => r.visitors} empty="" />
-                  </div>
-                )}
-              </Card>
-              <Card>
-                <CardHead title="Countries" hint="Visitors" />
-                <BarList rows={data.countries.map((c) => ({ ...c, key: countryName(c.key || null) }))} value={(r) => r.visitors} empty="No visits yet." />
-              </Card>
-              <Card>
-                <CardHead title="Devices and browsers" hint="Visitors" />
-                <TabbedLists
-                  tabs={[
-                    { id: "device", label: "Device", rows: data.devices },
-                    { id: "browser", label: "Browser", rows: data.browsers },
-                    { id: "os", label: "System", rows: data.systems },
-                  ]}
-                />
-              </Card>
-              <Card>
-                <CardHead title="How far they get" hint={`Last ${RANGE_LABEL[range]}`} />
-                <Funnel f={data.funnel} />
-              </Card>
-            </div>
-
-            <Card className="mt-3">
-              <CardHead title="Latest visits" hint={`${num(data.allTime.views)} page views and ${num(data.allTime.users)} accounts all time`} />
-              <RecentVisits rows={data.recent} />
-            </Card>
-          </>
+          <PaymentsView data={payments!} range={range} />
         )}
       </div>
     </main>
+  );
+}
+
+function VisitorsView({ data, range }: { data: SiteStats; range: Range }) {
+  const [metric, setMetric] = useState("visitors");
+  const active = VISIT_METRICS.find((m) => m.key === metric) ?? VISIT_METRICS[0];
+  return (
+    <>
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Kpi label="Visitors" value={num(data.totals.visitors)} now={data.totals.visitors} before={data.previous.visitors} />
+        <Kpi label="Page views" value={num(data.totals.views)} now={data.totals.views} before={data.previous.views} />
+        <Kpi label="Avg. time on page" value={duration(data.totals.avgMs)} now={data.totals.avgMs ?? 0} before={data.previous.avgMs ?? 0} />
+        <Kpi label="Searches started" value={num(data.totals.searches)} now={data.totals.searches} before={data.previous.searches} />
+        <Kpi label="Sign-ups" value={num(data.totals.signups)} now={data.totals.signups} before={data.previous.signups} />
+      </div>
+
+      <Card className="mt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-[15px] font-semibold">
+            {active.label} <span className="font-normal text-muted">· last {RANGE_LABEL[range]}</span>
+          </h2>
+          <Segmented value={metric} options={VISIT_METRICS.map((m) => m.key)} label={(k) => VISIT_METRICS.find((m) => m.key === k)!.label} onChange={setMetric} ariaLabel="Chart metric" />
+        </div>
+        <TrendChart series={data.series} metric={active} metrics={VISIT_METRICS} hourly={range === "24h"} />
+      </Card>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <Card>
+          <CardHead title="Pages they explore" hint="Visitors · views · avg. time" />
+          <BarList
+            rows={data.pages.map((p) => ({ ...p, key: PAGE_LABEL[p.key] ? `${PAGE_LABEL[p.key]}` : p.key, sub: PAGE_LABEL[p.key] ? p.key : undefined }))}
+            value={(r) => r.visitors}
+            extra={(r) => `${num(r.views ?? 0)} · ${duration(r.avgMs)}`}
+            empty="No page views yet."
+          />
+        </Card>
+        <Card>
+          <CardHead title="Brands researched" hint="Searches · people" />
+          <BarList
+            rows={data.brands.map((b) => ({ key: b.key, sub: b.demo ? "demo" : undefined, visitors: b.searches, views: b.visitors }))}
+            value={(r) => r.visitors}
+            extra={(r) => `${num(r.views ?? 0)} ${r.views === 1 ? "person" : "people"}`}
+            empty="No live searches yet."
+          />
+          {data.steps.length > 0 && (
+            <div className="mt-4 border-t border-line pt-3">
+              <p className="mb-2 font-mono text-[11.5px] text-muted">Research steps started</p>
+              <BarList rows={data.steps.map((s) => ({ key: STEP_LABEL[s.key] ?? s.key, visitors: s.searches }))} value={(r) => r.visitors} empty="" />
+            </div>
+          )}
+        </Card>
+        <Card>
+          <CardHead title="Where they come from" hint="Visitors" />
+          <BarList rows={data.referrers.map((r) => ({ ...r, key: r.key || "Direct / no referrer" }))} value={(r) => r.visitors} empty="No visits yet." />
+          {data.campaigns.length > 0 && (
+            <div className="mt-4 border-t border-line pt-3">
+              <p className="mb-2 font-mono text-[11.5px] text-muted">Campaign links (utm)</p>
+              <BarList rows={data.campaigns} value={(r) => r.visitors} empty="" />
+            </div>
+          )}
+        </Card>
+        <Card>
+          <CardHead title="Countries" hint="Visitors" />
+          <BarList rows={data.countries.map((c) => ({ ...c, key: countryName(c.key || null) }))} value={(r) => r.visitors} empty="No visits yet." />
+        </Card>
+        <Card>
+          <CardHead title="Devices and browsers" hint="Visitors" />
+          <TabbedLists
+            tabs={[
+              { id: "device", label: "Device", rows: data.devices },
+              { id: "browser", label: "Browser", rows: data.browsers },
+              { id: "os", label: "System", rows: data.systems },
+            ]}
+          />
+        </Card>
+        <Card>
+          <CardHead title="How far they get" hint={`Last ${RANGE_LABEL[range]}`} />
+          <Funnel f={data.funnel} />
+        </Card>
+      </div>
+
+      <Card className="mt-3">
+        <CardHead title="Latest visits" hint={`${num(data.allTime.views)} page views and ${num(data.allTime.users)} accounts all time`} />
+        <RecentVisits rows={data.recent} />
+      </Card>
+    </>
+  );
+}
+
+function PaymentsView({ data, range }: { data: PaymentStats; range: Range }) {
+  const [metric, setMetric] = useState("cents");
+  const active = PAY_METRICS.find((m) => m.key === metric) ?? PAY_METRICS[0];
+  const arr = Object.fromEntries(Object.entries(data.mrr).map(([c, v]) => [c, v * 12]));
+  const otherCurrencies = Object.keys(data.collected).some((c) => c !== "USD");
+  return (
+    <>
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <Kpi label={`Received · ${range}`} value={money(data.collected)} now={data.collected.USD ?? 0} before={data.previous.USD ?? 0} />
+        <Kpi label="Received all time" value={money(data.allTime)} note="Since payments were first recorded" />
+        <Kpi label="Monthly recurring" value={money(data.mrr)} note={`${money(arr)} a year at today's subscribers`} />
+        <Kpi
+          label="Paying subscribers"
+          value={num(data.subscribers.active + data.subscribers.pastDue)}
+          note={`${num(data.subscribers.pastDue)} retrying a failed payment · ${num(data.subscribers.cancelling)} cancelling`}
+        />
+        <Kpi
+          label="Checkouts paid"
+          value={data.checkouts.started ? `${num(data.checkouts.completed)} of ${num(data.checkouts.started)}` : "0"}
+          note={data.checkouts.started ? `${Math.round((Math.min(data.checkouts.completed, data.checkouts.started) / data.checkouts.started) * 100)}% of checkouts opened` : "No checkouts opened yet"}
+        />
+      </div>
+
+      <Card className="mt-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-[15px] font-semibold">
+            {active.label} <span className="font-normal text-muted">· last {RANGE_LABEL[range]}</span>
+          </h2>
+          <Segmented value={metric} options={PAY_METRICS.map((m) => m.key)} label={(k) => PAY_METRICS.find((m) => m.key === k)!.label} onChange={setMetric} ariaLabel="Chart metric" />
+        </div>
+        <TrendChart series={data.series} metric={active} metrics={PAY_METRICS} hourly={range === "24h"} />
+        {otherCurrencies && <p className="mt-1 text-[12px] text-muted">The chart shows US dollar payments only; the totals above include every currency.</p>}
+      </Card>
+
+      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <Card>
+          <CardHead title="What they pay for" hint={`Last ${RANGE_LABEL[range]}`} />
+          <BarList
+            rows={data.byProduct.map((p) => ({ key: PRODUCT_LABEL[p.key] ?? p.key, visitors: p.cents, views: p.count }))}
+            value={(r) => r.visitors}
+            format={(c) => cash(c)}
+            extra={(r) => `${num(r.views ?? 0)} ${r.views === 1 ? "payment" : "payments"}`}
+            empty="No payments in this period."
+          />
+        </Card>
+        <Card>
+          <CardHead title="Subscribers" hint={`${num(data.customers.length)} all time`} />
+          <Subscribers rows={data.customers} />
+        </Card>
+      </div>
+
+      <Card className="mt-3">
+        <CardHead title="Payments received" hint="Latest 50" />
+        <PaymentList rows={data.recent} />
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">
+          Renewals are picked up when Bachs shows a subscription&apos;s new period (checked each time this page loads). Refunds, fees and payouts aren&apos;t shown here;
+          your Bachs dashboard is the record for those.
+        </p>
+      </Card>
+    </>
+  );
+}
+
+function PaymentList({ rows }: { rows: PaymentStats["recent"] }) {
+  if (!rows.length) return <p className="py-6 text-center text-[13px] text-muted">No payments yet. They appear here as soon as a checkout is paid.</p>;
+  return (
+    <div className="-mx-4 overflow-x-auto sm:-mx-5">
+      <table className="w-full min-w-[620px] text-left text-[13px]">
+        <thead>
+          <tr className="border-b border-line font-mono text-[11.5px] text-muted">
+            <th className="px-4 py-2 font-normal sm:px-5">When</th>
+            <th className="px-2 py-2 font-normal">Customer</th>
+            <th className="px-2 py-2 font-normal">For</th>
+            <th className="px-2 py-2 font-normal">Type</th>
+            <th className="px-4 py-2 text-right font-normal sm:px-5">Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={`${r.at}-${i}`} className="border-b border-line last:border-0">
+              <td className="whitespace-nowrap px-4 py-2 text-muted sm:px-5" title={new Date(r.at).toLocaleString()}>
+                {day(r.at)}
+              </td>
+              <td className="max-w-[220px] truncate px-2 py-2">{r.email ?? <span className="text-muted">No account</span>}</td>
+              <td className="whitespace-nowrap px-2 py-2">{PRODUCT_LABEL[r.product] ?? r.product}</td>
+              <td className="whitespace-nowrap px-2 py-2 text-muted">{KIND_LABEL[r.kind] ?? r.kind}</td>
+              <td className="whitespace-nowrap px-4 py-2 text-right font-medium tabular-nums sm:px-5">{cash(r.cents, r.currency)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Subscribers({ rows }: { rows: PaymentStats["customers"] }) {
+  if (!rows.length) return <p className="py-6 text-center text-[13px] text-muted">No subscribers yet.</p>;
+  return (
+    <ul className="max-h-[360px] divide-y divide-line overflow-y-auto">
+      {rows.map((c, i) => {
+        const ended = c.status === "canceled" || c.status === "unpaid";
+        return (
+          <li key={`${c.email}-${i}`} className="flex items-start justify-between gap-3 py-2.5 text-[13.5px]">
+            <div className="min-w-0">
+              <p className="truncate font-medium">{c.email ?? "Deleted account"}</p>
+              <p className="mt-0.5 text-[12px] text-muted">
+                {PRODUCT_LABEL[`${c.plan}_${c.interval}`] ?? `${c.plan} · ${c.interval}`} · since {day(c.since)}
+                {c.periodEnd && !ended ? ` · ${c.cancelling ? "ends" : "renews"} ${day(c.periodEnd)}` : ""}
+              </p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="tabular-nums">{c.amount ? cash(Math.round(Number(c.amount) * 100), (c.currency || "USD").toUpperCase()) : ""}</p>
+              <p className={`mt-0.5 text-[12px] ${ended ? "text-muted" : c.status === "past_due" ? "text-warn" : "text-good"}`}>
+                {c.cancelling && !ended ? "Cancels at period end" : (STATUS_LABEL[c.status] ?? c.status)}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -252,9 +435,10 @@ function Segmented<T extends string>({ value, options, label, onChange, ariaLabe
   );
 }
 
-function Kpi({ label, value, now, before }: { label: string; value: string; now: number; before: number }) {
+function Kpi({ label, value, now = 0, before = 0, note }: { label: string; value: string; now?: number; before?: number; note?: string }) {
   let delta: React.ReactNode = <span className="text-faint">no earlier data</span>;
-  if (before > 0) {
+  if (note) delta = <span className="text-muted">{note}</span>;
+  else if (before > 0) {
     const pct = Math.round(((now - before) / before) * 100);
     const up = pct >= 0;
     delta = (
@@ -276,20 +460,32 @@ function Kpi({ label, value, now, before }: { label: string; value: string; now:
 
 type ListRow = Row & { sub?: string };
 
-function BarList<R extends ListRow>({ rows, value, extra, empty }: { rows: R[]; value: (r: R) => number; extra?: (r: R) => string; empty: string }) {
+function BarList<R extends ListRow>({
+  rows,
+  value,
+  extra,
+  empty,
+  format = num,
+}: {
+  rows: R[];
+  value: (r: R) => number;
+  extra?: (r: R) => string;
+  empty: string;
+  format?: (n: number) => string;
+}) {
   if (!rows.length) return empty ? <p className="py-6 text-center text-[13px] text-muted">{empty}</p> : null;
   const max = Math.max(...rows.map(value), 1);
   return (
     <ul className="space-y-1">
       {rows.map((r, i) => (
-        <li key={`${r.key}-${i}`} className="relative flex items-center gap-3 rounded-md px-2 py-1.5 text-[13.5px] hover:bg-subtle" title={`${r.key}: ${num(value(r))}`}>
+        <li key={`${r.key}-${i}`} className="relative flex items-center gap-3 rounded-md px-2 py-1.5 text-[13.5px] hover:bg-subtle" title={`${r.key}: ${format(value(r))}`}>
           <span className="absolute inset-y-0.5 left-0 rounded-[4px] bg-accent/15" style={{ width: `${Math.max(2, (value(r) / max) * 100)}%` }} aria-hidden />
           <span className="relative min-w-0 flex-1 truncate">
             {r.key}
             {r.sub && <span className="ml-1.5 font-mono text-[11px] text-muted">{r.sub}</span>}
           </span>
           {extra && <span className="relative shrink-0 font-mono text-[11.5px] text-muted">{extra(r)}</span>}
-          <span className="relative w-12 shrink-0 text-right font-medium tabular-nums">{num(value(r))}</span>
+          <span className="relative min-w-12 shrink-0 text-right font-medium tabular-nums">{format(value(r))}</span>
         </li>
       ))}
     </ul>
@@ -389,7 +585,7 @@ function niceStep(v: number) {
   return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
 }
 
-function TrendChart({ series, metric, hourly }: { series: SiteStats["series"]; metric: Metric; hourly: boolean }) {
+function TrendChart({ series, metric, metrics, hourly }: { series: ({ at: number } & Record<string, number>)[]; metric: MetricDef; metrics: MetricDef[]; hourly: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [hover, setHover] = useState<number | null>(null);
@@ -412,8 +608,8 @@ function TrendChart({ series, metric, hourly }: { series: SiteStats["series"]; m
   );
 
   const H = 240;
-  const pad = { l: 40, r: 12, t: 14, b: 28 };
-  const values = series.map((s) => s[metric]);
+  const pad = { l: 48, r: 12, t: 14, b: 28 };
+  const values = series.map((s) => s[metric.key] ?? 0);
   const step = niceStep(Math.max(1, Math.ceil(Math.max(...values, 1) / 4)));
   const max = Math.max(step * 4, 4);
   const iw = Math.max(0, width - pad.l - pad.r);
@@ -442,18 +638,22 @@ function TrendChart({ series, metric, hourly }: { series: SiteStats["series"]; m
             <thead className="sticky top-0 bg-white">
               <tr className="border-b border-line font-mono text-[11.5px] text-muted">
                 <th className="py-1.5 font-normal">{hourly ? "Hour" : "Day"}</th>
-                <th className="py-1.5 text-right font-normal">Visitors</th>
-                <th className="py-1.5 text-right font-normal">Page views</th>
-                <th className="py-1.5 text-right font-normal">Searches</th>
+                {metrics.map((m) => (
+                  <th key={m.key} className="py-1.5 text-right font-normal">
+                    {m.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {series.map((s) => (
                 <tr key={s.at} className="border-b border-line last:border-0">
                   <td className="py-1.5">{label(s.at, true)}</td>
-                  <td className="py-1.5 text-right tabular-nums">{num(s.visitors)}</td>
-                  <td className="py-1.5 text-right tabular-nums">{num(s.views)}</td>
-                  <td className="py-1.5 text-right tabular-nums">{num(s.searches)}</td>
+                  {metrics.map((m) => (
+                    <td key={m.key} className="py-1.5 text-right tabular-nums">
+                      {m.format(s[m.key] ?? 0)}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>
@@ -466,7 +666,7 @@ function TrendChart({ series, metric, hourly }: { series: SiteStats["series"]; m
               width={width}
               height={H}
               role="img"
-              aria-label={`${METRIC_LABEL[metric]}: ${num(total)} in total, highest ${num(values[peak] ?? 0)} on ${label(series[peak]?.at ?? 0, true)}`}
+              aria-label={`${metric.label}: ${metric.format(total)} in total, highest ${metric.format(values[peak] ?? 0)} on ${label(series[peak]?.at ?? 0, true)}`}
               onPointerMove={(e) => pick(e.clientX, e.currentTarget)}
               onPointerDown={(e) => pick(e.clientX, e.currentTarget)}
               onPointerLeave={() => setHover(null)}
@@ -476,7 +676,7 @@ function TrendChart({ series, metric, hourly }: { series: SiteStats["series"]; m
                 <g key={k}>
                   <line x1={pad.l} x2={width - pad.r} y1={y(step * k)} y2={y(step * k)} className="stroke-line" strokeWidth={1} />
                   <text x={pad.l - 8} y={y(step * k)} dy="0.32em" textAnchor="end" className="fill-muted font-mono text-[10.5px]">
-                    {num(step * k)}
+                    {metric.format(step * k)}
                   </text>
                 </g>
               ))}
@@ -504,10 +704,10 @@ function TrendChart({ series, metric, hourly }: { series: SiteStats["series"]; m
               style={{ left: Math.min(Math.max(0, x(hover) - 75), Math.max(0, width - 160)) }}
             >
               <p className="font-medium">{label(series[hover].at, true)}</p>
-              {(["visitors", "views", "searches"] as Metric[]).map((m) => (
-                <p key={m} className={`mt-0.5 flex justify-between gap-4 ${m === metric ? "text-ink" : "text-muted"}`}>
-                  <span>{METRIC_LABEL[m]}</span>
-                  <span className={`tabular-nums ${m === metric ? "font-semibold" : ""}`}>{num(series[hover][m])}</span>
+              {metrics.map((m) => (
+                <p key={m.key} className={`mt-0.5 flex justify-between gap-4 ${m.key === metric.key ? "text-ink" : "text-muted"}`}>
+                  <span>{m.label}</span>
+                  <span className={`tabular-nums ${m.key === metric.key ? "font-semibold" : ""}`}>{m.format(series[hover][m.key] ?? 0)}</span>
                 </p>
               ))}
             </div>
@@ -516,8 +716,7 @@ function TrendChart({ series, metric, hourly }: { series: SiteStats["series"]; m
       )}
       <div className="mt-2 flex items-center justify-between text-[12px] text-muted">
         <span>
-          {num(total)} {total === 1 ? { visitors: "visitor", views: "page view", searches: "search" }[metric] : METRIC_LABEL[metric].toLowerCase()} in this period
-          {hourly ? " (by hour)" : " (by day)"}
+          {metric.summary(total)} in this period{hourly ? " (by hour)" : " (by day)"}
         </span>
         <button type="button" onClick={() => setAsTable((t) => !t)} className="underline-offset-2 hover:text-ink hover:underline">
           {asTable ? "Show chart" : "Show as table"}

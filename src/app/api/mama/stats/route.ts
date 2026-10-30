@@ -5,7 +5,7 @@ import { rateLimit } from "@/lib/guard";
 
 export const dynamic = "force-dynamic";
 
-// GET ?range=24h|7d|30d|90d&tz=<minutes east of UTC> -> visit stats for the admin dashboard.
+// GET ?range=24h|7d|30d|90d&tz=<minutes east of UTC> -> visit stats for the /mama dashboard.
 // Anyone who isn't an admin gets a plain 404, so the endpoint doesn't reveal itself.
 export async function GET(request: Request) {
   const notFound = () => new Response("Not found", { status: 404, headers: { "Cache-Control": "no-store" } });

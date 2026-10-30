@@ -78,12 +78,44 @@ interface Row {
   checked_at: number;
 }
 
+/* ---------- Payment ledger (shown on the /mama dashboard) ---------- */
+
+export interface PaymentRecord {
+  id: string;
+  userId: string | null;
+  kind: "new" | "renewal" | "one_time";
+  product: string;
+  /** Decimal amount as Bachs gives it ("19.00"), or a number of dollars. */
+  amount: string | number;
+  currency: string;
+  reference?: string | null;
+}
+
+/** Saves a payment once (the same id again is ignored). Never throws: billing must not fail over a ledger row. */
+export async function recordPayment(p: PaymentRecord) {
+  const cents = Math.round(Number(p.amount) * 100);
+  if (!Number.isFinite(cents) || cents <= 0) return;
+  try {
+    await (await db())
+      .prepare("INSERT OR IGNORE INTO payments (id, user_id, kind, product, amount_cents, currency, reference, paid_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+      .bind(p.id.slice(0, 200), p.userId, p.kind, p.product, cents, (p.currency || "USD").toUpperCase().slice(0, 3), p.reference ?? null, Date.now())
+      .run();
+  } catch (e) {
+    console.error("[billing] payment not recorded:", (e as Error).message);
+  }
+}
+
 async function save(userId: string, s: BachsSubscription) {
   const which = fromProduct(s.product?.id) ?? (isPlan(s.metadata?.plan) && isInterval(s.metadata?.interval) ? { plan: s.metadata!.plan as PlanId, interval: s.metadata!.interval as Interval } : null);
   if (!which) throw new Error(`Subscription ${s.id} is for an unknown product`);
   const now = Date.now();
   const periodEnd = s.current_period_end ? Date.parse(s.current_period_end) || null : null;
-  await (await db())
+  const database = await db();
+  const before = await database
+    .prepare("SELECT subscription_id, status, current_period_end FROM subscriptions WHERE user_id = ?")
+    .bind(userId)
+    .first<{ subscription_id: string; status: string; current_period_end: number | null }>();
+  await database
     .prepare(
       `INSERT INTO subscriptions (user_id, subscription_id, customer_id, plan, interval, status, current_period_end, cancel_at_period_end, amount, currency, checked_at, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -93,6 +125,39 @@ async function save(userId: string, s: BachsSubscription) {
     )
     .bind(userId, s.id, s.customer?.customer_id ?? null, which.plan, which.interval, String(s.status ?? "active"), periodEnd, s.cancel_at_period_end ? 1 : 0, s.amount ?? null, s.currency ?? null, now, now, now)
     .run();
+
+  // A paid period started: the first one when this subscription is new to us; a renewal
+  // when its period end moved forward, or when it's paid again after a trial or a failed
+  // payment (the period may have moved on while it was retrying). Trials and failed
+  // renewals aren't "active", so they record nothing. The id is per period, so a period
+  // is only ever counted once.
+  const isNew = !before || before.subscription_id !== s.id;
+  const renewed = !isNew && ((periodEnd !== null && before.current_period_end !== null && periodEnd > before.current_period_end) || before.status !== "active");
+  if (String(s.status) === "active" && (isNew || renewed)) {
+    const plan = planOf(which.plan);
+    await recordPayment({
+      id: `sub:${s.id}:${periodEnd ?? now}`,
+      userId,
+      kind: isNew ? "new" : "renewal",
+      product: `${which.plan}_${which.interval}`,
+      amount: s.amount ?? (which.interval === "yearly" ? plan.yearly : plan.monthly),
+      currency: s.currency ?? "USD",
+      reference: s.id,
+    });
+  }
+}
+
+/**
+ * Re-reads subscriptions whose renewal date has passed, so renewals show on the dashboard
+ * even when the customer hasn't been back since. A few at a time, oldest first.
+ */
+export async function refreshDueSubscriptions(limit = 10) {
+  if (provider() !== "bachs") return;
+  const rows = await (await db())
+    .prepare("SELECT user_id FROM subscriptions WHERE status != 'canceled' AND current_period_end IS NOT NULL AND current_period_end < ? ORDER BY current_period_end ASC LIMIT ?")
+    .bind(Date.now(), limit)
+    .all<{ user_id: string }>();
+  for (const r of rows.results) await current(r.user_id);
 }
 
 /** The user's subscription, refreshed from Bachs when it may have changed. */

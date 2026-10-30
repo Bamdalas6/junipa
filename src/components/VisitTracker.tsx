@@ -20,7 +20,7 @@ export function VisitTracker() {
 
   useEffect(() => {
     const nav = navigator as Navigator & { globalPrivacyControl?: boolean };
-    if (nav.globalPrivacyControl || nav.doNotTrack === "1" || pathname.startsWith("/admin")) return;
+    if (nav.globalPrivacyControl || nav.doNotTrack === "1" || pathname.startsWith("/mama")) return;
     const started = Date.now();
     let id: string | null | undefined;
     let view: Promise<void> | null = null;
