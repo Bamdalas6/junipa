@@ -1,5 +1,6 @@
 import { createSession, findUserByEmail, fromThisSite, normalEmail, sessionCookie, verifyPassword } from "@/lib/auth";
-import { badRequest, rateLimit, rateLimitKey, readJson } from "@/lib/guard";
+import { badRequest, clientIp, rateLimit, rateLimitKey, readJson } from "@/lib/guard";
+import { AUTH_ACCOUNT, AUTH_IP, sharedLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -8,6 +9,8 @@ export async function POST(request: Request) {
   if (!fromThisSite(request)) return Response.json({ error: "Forbidden" }, { status: 403 });
   const limited = rateLimit(request, "auth-signin", 20, 15 * 60_000);
   if (limited) return limited;
+  const shared = await sharedLimit(AUTH_IP, `signin:${clientIp(request)}`);
+  if (shared) return shared;
   let body: { email?: unknown; password?: unknown };
   try {
     body = await readJson(request, 4_000);
@@ -19,6 +22,8 @@ export async function POST(request: Request) {
   // Also limit tries per account, wherever they come from.
   const perAccount = rateLimitKey("auth-signin-acct", email, 10, 15 * 60_000);
   if (perAccount) return perAccount;
+  const sharedAccount = email ? await sharedLimit(AUTH_ACCOUNT, `signin:${email}`) : null;
+  if (sharedAccount) return sharedAccount;
 
   const user = email ? await findUserByEmail(email) : null;
   const ok = await verifyPassword(password, user?.password_hash ?? null);

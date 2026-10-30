@@ -1,5 +1,6 @@
 import { createSession, fromThisSite, hashPassword, resetPassword, sessionCookie } from "@/lib/auth";
-import { badRequest, rateLimit, readJson } from "@/lib/guard";
+import { badRequest, clientIp, rateLimit, readJson } from "@/lib/guard";
+import { AUTH_IP, sharedLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,8 @@ export async function POST(request: Request) {
   if (!fromThisSite(request)) return Response.json({ error: "Forbidden" }, { status: 403 });
   const limited = rateLimit(request, "auth-reset", 10, 15 * 60_000);
   if (limited) return limited;
+  const shared = await sharedLimit(AUTH_IP, `reset:${clientIp(request)}`);
+  if (shared) return shared;
   let body: { token?: unknown; password?: unknown };
   try {
     body = await readJson(request, 2_000);

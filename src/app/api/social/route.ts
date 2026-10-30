@@ -1,5 +1,6 @@
 import { sanitizeMarket } from "@/lib/geo";
-import { badRequest, clip, rateLimit, readJson, userMessage } from "@/lib/guard";
+import { badRequest, clientIp, clip, rateLimit, readJson, userMessage } from "@/lib/guard";
+import { RUN_IP, sharedLimit } from "@/lib/ratelimit";
 import { SOCIAL, handlesKey, seal, verifySocial } from "@/lib/payments";
 import type { RunEvent, SocialRequest } from "@/lib/schema";
 import { runSocial } from "@/lib/social";
@@ -19,6 +20,8 @@ export async function POST(request: Request) {
   }
   const limited = body.demo === true ? rateLimit(request, "social-demo", 60, 10 * 60_000) : rateLimit(request, "social", 15, 10 * 60_000);
   if (limited) return limited;
+  const shared = body.demo === true ? null : await sharedLimit(RUN_IP, `social:${clientIp(request)}`);
+  if (shared) return shared;
   const token = typeof body.unlock === "string" ? body.unlock : undefined;
   const handles = (Array.isArray(body.handles) ? body.handles.slice(0, 6) : [])
     .filter((h) => isPlatform(h?.platform))

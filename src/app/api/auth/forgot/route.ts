@@ -1,6 +1,7 @@
 import { EMAIL, RESET_MINUTES, createPasswordReset, findUserByEmail, fromThisSite, normalEmail } from "@/lib/auth";
 import { buttonEmail, emailConfigured, sendEmail } from "@/lib/email";
-import { badRequest, rateLimit, rateLimitKey, readJson, siteOrigin } from "@/lib/guard";
+import { badRequest, clientIp, rateLimit, rateLimitKey, readJson, siteOrigin } from "@/lib/guard";
+import { AUTH_ACCOUNT, AUTH_IP, sharedLimit } from "@/lib/ratelimit";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,8 @@ export async function POST(request: Request) {
   if (!emailConfigured()) return Response.json({ error: "Password reset isn't available yet. Email privacy@junipa.app and we'll help." }, { status: 503 });
   const limited = rateLimit(request, "auth-forgot", 5, 15 * 60_000);
   if (limited) return limited;
+  const shared = await sharedLimit(AUTH_IP, `forgot:${clientIp(request)}`);
+  if (shared) return shared;
   let body: { email?: unknown };
   try {
     body = await readJson(request, 2_000);
@@ -22,6 +25,8 @@ export async function POST(request: Request) {
   // At most 3 emails an hour to one address, so nobody can flood an inbox.
   const perAccount = rateLimitKey("auth-forgot-acct", email, 3, 60 * 60_000);
   if (perAccount) return perAccount;
+  const sharedAccount = await sharedLimit(AUTH_ACCOUNT, `forgot:${email}`);
+  if (sharedAccount) return sharedAccount;
 
   const user = await findUserByEmail(email);
   if (user) {

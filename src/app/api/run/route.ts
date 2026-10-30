@@ -7,7 +7,8 @@ import { runDemo } from "@/lib/demo";
 import { sanitizeMarket } from "@/lib/geo";
 import { provider, runPhase } from "@/lib/engine";
 import { runGeminiPhase } from "@/lib/engine-gemini";
-import { badRequest, clip, clipDeep, rateLimit, readJson, userMessage } from "@/lib/guard";
+import { badRequest, clientIp, clip, clipDeep, rateLimit, readJson, userMessage } from "@/lib/guard";
+import { RUN_IP, sharedLimit } from "@/lib/ratelimit";
 import { TIERS, isPaidPhase, verifyUnlock } from "@/lib/payments";
 import type { RunEvent, RunRequest } from "@/lib/schema";
 
@@ -33,6 +34,8 @@ export async function POST(request: Request) {
   // Live research costs money per call, so it's limited per visitor. Demo runs are cheap.
   const limited = demo ? rateLimit(request, "run-demo", 120, 10 * 60_000) : rateLimit(request, "run", 40, 10 * 60_000);
   if (limited) return limited;
+  const shared = demo ? null : await sharedLimit(RUN_IP, `run:${clientIp(request)}`);
+  if (shared) return shared;
 
   // Only known fields, with every string and list capped, go into the prompts.
   const req: RunRequest = {

@@ -15,7 +15,7 @@ import { MarketPicker } from "./MarketPicker";
 import { AccountButton } from "./Auth";
 import { ThemeToggle } from "./ThemeToggle";
 import { Activity } from "./parts";
-import { Button, CopyButton, Instagram, Linkedin, Logo } from "./ui";
+import { Button, CopyButton, Instagram, Linkedin, Logo, safeHref } from "./ui";
 
 type Account = { platform: Platform; handle: string; followers: string; posts: string };
 type Preview = {
@@ -739,7 +739,7 @@ function PlanView({ result, industry, done, onDone }: { result: { profiles: Prof
           action={
             <div className="flex flex-wrap items-center gap-2">
               {profiles.map((p) => (
-                <a key={p.platform + p.handle} href={p.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line-2 bg-white px-3 py-1.5 text-[13px] hover:border-ink/30">
+                <a key={p.platform + p.handle} href={safeHref(p.url)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-lg border border-line-2 bg-white px-3 py-1.5 text-[13px] hover:border-ink/30">
                   <PlatformIcon platform={p.platform} className="size-3.5" />
                   <span className="font-medium">{p.platform === "linkedin" ? p.handle : `@${p.handle}`}</span>
                   <span className="font-mono text-[11.5px] text-muted">{p.followers ?? (p.readable ? "public profile" : "stats hidden")}</span>
