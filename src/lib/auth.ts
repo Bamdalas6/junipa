@@ -11,6 +11,8 @@ export interface User {
   avatar: string | null;
   /** Signed up with a password (Google-only accounts have none). */
   hasPassword: boolean;
+  /** Signed in with Google at least once, so Google has verified the email. */
+  google: boolean;
 }
 
 interface UserRow {
@@ -67,7 +69,7 @@ export async function verifyPassword(password: string, stored: string | null) {
 
 /* ---------- Users ---------- */
 
-const toUser = (r: UserRow): User => ({ id: r.id, email: r.email, name: r.name, avatar: r.avatar, hasPassword: !!r.password_hash });
+const toUser = (r: UserRow): User => ({ id: r.id, email: r.email, name: r.name, avatar: r.avatar, hasPassword: !!r.password_hash, google: !!r.google_sub });
 
 export async function findUserByEmail(email: string) {
   return (await db()).prepare("SELECT * FROM users WHERE email = ?").bind(normalEmail(email)).first<UserRow>();
@@ -202,7 +204,11 @@ function readCookie(request: Request, name: string) {
 
 /** The signed-in user for this request, or null. */
 export async function currentUser(request: Request): Promise<User | null> {
-  const token = readCookie(request, SESSION_COOKIE);
+  return userFromSession(readCookie(request, SESSION_COOKIE));
+}
+
+/** The user a session cookie value belongs to (for server pages, which read cookies directly). */
+export async function userFromSession(token: string | undefined): Promise<User | null> {
   if (!token || token.length > 100) return null;
   try {
     const row = await (await db())

@@ -43,6 +43,11 @@ const sections: LegalSection[] = [
             ["Social growth plans", "The social profile links or handles you enter, and the public information those profiles show.", "To write the plan you asked for."],
             ["Billing", "Your plan, billing period, subscription status, renewal date, amount and our payment provider's customer and subscription IDs. Card details go directly to our payment provider; we never see or store them.", "To give you the plan you pay for."],
             ["Technical data", "IP address, browser type and request logs, kept by our hosting provider for a short period. We hold IP addresses in memory briefly to limit abuse (rate limiting).", "To keep the service secure and working."],
+            [
+              "Visit statistics",
+              "The pages you view and for how long, the website that sent you, any campaign tags in the link, your country (from your connection), your device type, browser and operating system, and whether you're signed in. We count visits ourselves, without cookies and without storing your IP address: each visitor gets a code that changes every day, so we can't follow you from one day to the next. If your browser sends Global Privacy Control or Do Not Track, we don't count your visits.",
+              "To understand how the site is used and improve it.",
+            ],
           ]}
         />
         <p>
@@ -104,6 +109,7 @@ const sections: LegalSection[] = [
             ["Researching businesses and their decision makers from public sources", "Legitimate interests (business-to-business prospecting), as described in section 3"],
             ["Keeping the service secure, preventing abuse and fraud, fixing problems", "Legitimate interests"],
             ["Improving the service (for example, checking research quality)", "Legitimate interests"],
+            ["Measuring how the site is used (our own visit statistics, described in section 2)", "Legitimate interests"],
             ["Sending account and billing emails, and answering your requests", "Performance of our contract; legal obligation"],
             ["Keeping tax and accounting records", "Legal obligation"],
           ]}
@@ -177,6 +183,7 @@ const sections: LegalSection[] = [
         <li>Sign-in sessions: 30 days, or until you sign out.</li>
         <li>Billing records: as long as tax and accounting law requires.</li>
         <li>Request logs: a short period, set by our hosting provider, for security and troubleshooting.</li>
+        <li>Visit statistics: 13 months, then deleted.</li>
       </Ul>
     ),
   },
@@ -264,6 +271,7 @@ export default function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy Policy"
+      updated="30 October 2026"
       other={{ href: "/terms", label: "Terms of Service" }}
       intro={
         <>
@@ -273,7 +281,7 @@ export default function PrivacyPage() {
           </p>
           <p className="rounded-[10px] border border-line bg-white p-4 text-[14px]">
             <strong className="text-ink">In short:</strong> we collect what we need to run the service, we research businesses only from public sources, we use no
-            advertising or analytics trackers, we never sell personal data, and you can ask us to see, correct or delete your data at any time by emailing {mail}.
+            advertising or third-party trackers (we count visits ourselves, without cookies), we never sell personal data, and you can ask us to see, correct or delete your data at any time by emailing {mail}.
           </p>
         </>
       }

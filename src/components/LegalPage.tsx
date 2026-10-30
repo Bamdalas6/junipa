@@ -18,7 +18,20 @@ export interface LegalSection {
   body: React.ReactNode;
 }
 
-export function LegalPage({ title, intro, sections, other }: { title: string; intro: React.ReactNode; sections: LegalSection[]; other: { href: string; label: string } }) {
+export function LegalPage({
+  title,
+  intro,
+  sections,
+  other,
+  updated = LEGAL.updated,
+}: {
+  title: string;
+  intro: React.ReactNode;
+  sections: LegalSection[];
+  other: { href: string; label: string };
+  /** When this page last changed, if later than LEGAL.updated. */
+  updated?: string;
+}) {
   return (
     <main className="lp lp-app min-h-dvh">
       <header className="sticky top-0 z-30 border-b border-line bg-paper/90 backdrop-blur-md">
@@ -45,7 +58,7 @@ export function LegalPage({ title, intro, sections, other }: { title: string; in
 
         <article className="legal min-w-0 max-w-[720px] text-[15px] leading-[1.7] text-ink-2">
           <h1 className="text-[32px] font-semibold leading-tight tracking-[-0.025em] text-ink">{title}</h1>
-          <p className="mt-2 font-mono text-[12px] text-muted">Last updated {LEGAL.updated}</p>
+          <p className="mt-2 font-mono text-[12px] text-muted">Last updated {updated}</p>
           <details className="mt-5 rounded-[10px] border border-line bg-white px-4 py-3 lg:hidden">
             <summary className="cursor-pointer text-[14px] font-medium text-ink">On this page</summary>
             <Contents sections={sections} />

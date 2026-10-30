@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Bricolage_Grotesque, Geist_Mono, JetBrains_Mono } from "next/font/google";
 import { AuthProvider } from "@/components/Auth";
+import { VisitTracker } from "@/components/VisitTracker";
 import "./globals.css";
 
 // Text and headings: Bricolage Grotesque (a variable font, so every weight comes in one file).
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-dvh font-sans">
         <AuthProvider>{children}</AuthProvider>
+        <VisitTracker />
       </body>
     </html>
   );

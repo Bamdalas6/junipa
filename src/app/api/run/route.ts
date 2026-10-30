@@ -9,6 +9,7 @@ import { provider, runPhase } from "@/lib/engine";
 import { runGeminiPhase } from "@/lib/engine-gemini";
 import { badRequest, clientIp, clip, clipDeep, rateLimit, readJson, userMessage } from "@/lib/guard";
 import { RUN_IP, sharedLimit } from "@/lib/ratelimit";
+import { isAdmin, recordEvent } from "@/lib/analytics";
 import { TIERS, isPaidPhase, verifyUnlock } from "@/lib/payments";
 import type { RunEvent, RunRequest } from "@/lib/schema";
 
@@ -78,6 +79,9 @@ export async function POST(request: Request) {
       req.limits = { accounts: t.accounts, people: t.peoplePerAccount, verifiedEmails: t.verifiedEmails };
     }
   }
+
+  // For the admin dashboard: which research steps people start, on which brands.
+  if (!req.demo && !isAdmin(user)) await recordEvent(request, "search", req.phase, req.domain);
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream({

@@ -32,6 +32,37 @@ export const SCHEMA = [
     at INTEGER NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS login_failures_email ON login_failures (email, at)`,
+  // Visit stats for the admin dashboard (first-party, no cookies, no IP addresses stored).
+  // visitor: a hash that changes every day, so a person can be counted once a day but
+  // never followed across days. duration_ms is filled in when they leave the page.
+  `CREATE TABLE IF NOT EXISTS page_views (
+    id TEXT PRIMARY KEY,
+    at INTEGER NOT NULL,
+    visitor TEXT NOT NULL,
+    path TEXT NOT NULL,
+    referrer TEXT,
+    utm_source TEXT,
+    utm_medium TEXT,
+    utm_campaign TEXT,
+    country TEXT,
+    device TEXT,
+    browser TEXT,
+    os TEXT,
+    signed_in INTEGER NOT NULL DEFAULT 0,
+    duration_ms INTEGER
+  )`,
+  `CREATE INDEX IF NOT EXISTS page_views_at ON page_views (at)`,
+  // Actions worth counting, e.g. a research step started (name "search", label = the step).
+  `CREATE TABLE IF NOT EXISTS site_events (
+    id TEXT PRIMARY KEY,
+    at INTEGER NOT NULL,
+    visitor TEXT NOT NULL,
+    name TEXT NOT NULL,
+    label TEXT,
+    target TEXT,
+    country TEXT
+  )`,
+  `CREATE INDEX IF NOT EXISTS site_events_at ON site_events (at)`,
   `CREATE TABLE IF NOT EXISTS workspaces (
     user_id TEXT NOT NULL,
     domain TEXT NOT NULL,
