@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LEGAL, LegalPage, Ul, type LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Terms of Service · Junia",
-  description: "The terms for using Junia: accounts, subscriptions, acceptable use, research output and liability.",
+  title: "Terms of Service · Junipa",
+  description: "The terms for using Junipa: accounts, subscriptions, acceptable use, research output and liability.",
 };
 
 const mail = (
@@ -22,14 +22,14 @@ const sections: LegalSection[] = [
           These terms are an agreement between you and {LEGAL.operator} (&ldquo;we&rdquo;, &ldquo;us&rdquo;), which operates {LEGAL.product} at {LEGAL.site} (the
           &ldquo;service&rdquo;). By creating an account or using the service, you accept these terms and our <a href="/privacy" className="text-accent hover:underline">Privacy Policy</a>.
         </p>
-        <p>If you use Junia for a company or other organisation, you accept these terms on its behalf and confirm you have authority to do so; &ldquo;you&rdquo; then means that organisation.</p>
+        <p>If you use Junipa for a company or other organisation, you accept these terms on its behalf and confirm you have authority to do so; &ldquo;you&rdquo; then means that organisation.</p>
       </>
     ),
   },
   {
     id: "eligibility",
-    title: "Who can use Junia",
-    body: <p>Junia is a business tool. You must be at least 18 and use it for business or professional purposes. You may not use it if the law prohibits you from doing so.</p>,
+    title: "Who can use Junipa",
+    body: <p>Junipa is a business tool. You must be at least 18 and use it for business or professional purposes. You may not use it if the law prohibits you from doing so.</p>,
   },
   {
     id: "accounts",
@@ -44,18 +44,18 @@ const sections: LegalSection[] = [
   },
   {
     id: "service",
-    title: "What Junia does",
+    title: "What Junipa does",
     body: (
       <>
         <p>
-          Junia researches a business and its market, suggests audiences, finds prospect businesses and the people who decide at them from public sources, drafts
+          Junipa researches a business and its market, suggests audiences, finds prospect businesses and the people who decide at them from public sources, drafts
           outreach messages, and (on Pro) tracks results and reminds you when follow-ups are due.
         </p>
         <p>
-          <strong className="text-ink">Junia does not send messages for you.</strong> When you send a message, Junia opens your own email, social or messaging app with
+          <strong className="text-ink">Junipa does not send messages for you.</strong> When you send a message, Junipa opens your own email, social or messaging app with
           the text ready, and you send it from your own account.
         </p>
-        <p>We keep improving Junia, so features may change. We won&apos;t remove a core feature of your paid plan during a period you have already paid for without giving you a fair alternative or a pro-rata refund.</p>
+        <p>We keep improving Junipa, so features may change. We won&apos;t remove a core feature of your paid plan during a period you have already paid for without giving you a fair alternative or a pro-rata refund.</p>
       </>
     ),
   },
@@ -114,15 +114,15 @@ const sections: LegalSection[] = [
     title: "Acceptable use",
     body: (
       <>
-        <p>You agree to use Junia lawfully and fairly. In particular, you will not:</p>
+        <p>You agree to use Junipa lawfully and fairly. In particular, you will not:</p>
         <Ul>
           <li>send spam, or contact people in breach of anti-spam, marketing or privacy laws, including the GDPR and ePrivacy rules, the UK PECR, the US CAN-SPAM Act and TCPA, Canada&apos;s anti-spam law and the Nigeria Data Protection Act;</li>
           <li>ignore a request to stop contacting someone, or keep contacting a person who has asked you not to;</li>
           <li>break the rules of the platforms you send from, such as Instagram, WhatsApp, LinkedIn or your email provider;</li>
           <li>harass, threaten, deceive or impersonate anyone, or send unlawful, misleading or harmful content;</li>
-          <li>use Junia to make decisions about credit, employment, insurance, housing or other eligibility, or to collect sensitive personal data;</li>
-          <li>copy, resell, publish or build a database or competing product from Junia&apos;s research or service;</li>
-          <li>access Junia by automated means other than its normal interface, get around usage limits, or interfere with its security or other users;</li>
+          <li>use Junipa to make decisions about credit, employment, insurance, housing or other eligibility, or to collect sensitive personal data;</li>
+          <li>copy, resell, publish or build a database or competing product from Junipa&apos;s research or service;</li>
+          <li>access Junipa by automated means other than its normal interface, get around usage limits, or interfere with its security or other users;</li>
           <li>reverse engineer the service, except where the law allows it; or</li>
           <li>enter information you have no right to use, or confidential information you are not allowed to share with our AI providers.</li>
         </Ul>
@@ -136,7 +136,7 @@ const sections: LegalSection[] = [
     body: (
       <p>
         You decide who to contact, what to send and when. You are the sender and are responsible for your messages and for complying with the laws and platform rules
-        that apply to them, including identifying yourself, giving people a way to opt out, and honouring opt-outs. Junia adds an opt-out line to follow-up emails as a
+        that apply to them, including identifying yourself, giving people a way to opt out, and honouring opt-outs. Junipa adds an opt-out line to follow-up emails as a
         convenience; it doesn&apos;t make your outreach compliant on its own. If you send commercial email to the US, the law also requires your postal address.
       </p>
     ),
@@ -147,7 +147,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          You keep ownership of what you put into Junia and, between you and us, of the research and drafts Junia produces for you (&ldquo;your content&rdquo;). You
+          You keep ownership of what you put into Junipa and, between you and us, of the research and drafts Junipa produces for you (&ldquo;your content&rdquo;). You
           give us a limited licence to host, process and display your content only to run, secure and improve the service for you.
         </p>
         <p>
@@ -162,8 +162,8 @@ const sections: LegalSection[] = [
     title: "Research and AI output",
     body: (
       <p>
-        Junia&apos;s research is produced with AI and public sources. It can be incomplete, out of date or wrong, and similar requests can give different results. Check
-        important facts, such as a person&apos;s role or contact details, before you rely on them. Junia&apos;s output isn&apos;t legal, financial or other
+        Junipa&apos;s research is produced with AI and public sources. It can be incomplete, out of date or wrong, and similar requests can give different results. Check
+        important facts, such as a person&apos;s role or contact details, before you rely on them. Junipa&apos;s output isn&apos;t legal, financial or other
         professional advice, and we don&apos;t promise any particular result, such as replies, meetings or sales.
       </p>
     ),
@@ -171,12 +171,12 @@ const sections: LegalSection[] = [
   {
     id: "third-party",
     title: "Other services",
-    body: <p>Junia works with other services, such as Google sign-in, Bachs for payments, and the email and social apps you send from. Their own terms apply to your use of them, and we aren&apos;t responsible for them.</p>,
+    body: <p>Junipa works with other services, such as Google sign-in, Bachs for payments, and the email and social apps you send from. Their own terms apply to your use of them, and we aren&apos;t responsible for them.</p>,
   },
   {
     id: "ip",
     title: "Our intellectual property",
-    body: <p>The service, its software, design and the Junia name and logo belong to us or our licensors. These terms give you the right to use the service as described; they don&apos;t transfer any ownership to you.</p>,
+    body: <p>The service, its software, design and the Junipa name and logo belong to us or our licensors. These terms give you the right to use the service as described; they don&apos;t transfer any ownership to you.</p>,
   },
   {
     id: "ending",
@@ -184,7 +184,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          You can stop using Junia and ask us to delete your account at any time by emailing {mail}; cancel any subscription first. We may suspend or end your access
+          You can stop using Junipa and ask us to delete your account at any time by emailing {mail}; cancel any subscription first. We may suspend or end your access
           if you seriously or repeatedly break these terms, if you don&apos;t pay, or if we must for legal reasons. Where reasonable, we will warn you first.
         </p>
         <p>If we close your account for reasons other than your breach, we will refund any unused part of a prepaid period. After an account ends, we delete its data as described in our Privacy Policy.</p>
@@ -196,7 +196,7 @@ const sections: LegalSection[] = [
     title: "Disclaimer",
     body: (
       <p>
-        We work hard to keep Junia useful and available, but to the fullest extent the law allows, the service is provided &ldquo;as is&rdquo; and &ldquo;as
+        We work hard to keep Junipa useful and available, but to the fullest extent the law allows, the service is provided &ldquo;as is&rdquo; and &ldquo;as
         available&rdquo;, without warranties of any kind, express or implied, including fitness for a particular purpose, accuracy or uninterrupted availability.
       </p>
     ),
@@ -245,7 +245,7 @@ const sections: LegalSection[] = [
   {
     id: "changes",
     title: "Changes to these terms",
-    body: <p>We may update these terms as Junia changes. For significant changes, we will give at least 30 days&apos; notice by email or in the app. If you keep using Junia after a change takes effect, the new terms apply; if you don&apos;t agree, you can cancel before then.</p>,
+    body: <p>We may update these terms as Junipa changes. For significant changes, we will give at least 30 days&apos; notice by email or in the app. If you keep using Junipa after a change takes effect, the new terms apply; if you don&apos;t agree, you can cancel before then.</p>,
   },
   {
     id: "general",
@@ -255,7 +255,7 @@ const sections: LegalSection[] = [
         <li>These terms, with our Privacy Policy and the plan details shown when you subscribe, are the whole agreement between us about the service.</li>
         <li>If a court finds part of these terms unenforceable, the rest stays in effect.</li>
         <li>If we don&apos;t enforce a right straight away, we don&apos;t give it up.</li>
-        <li>You may not transfer these terms without our consent; we may transfer them to a business that takes over Junia, and will tell you if we do.</li>
+        <li>You may not transfer these terms without our consent; we may transfer them to a business that takes over Junipa, and will tell you if we do.</li>
         <li>We aren&apos;t responsible for delays or failures caused by events beyond our reasonable control.</li>
         <li>We may send you notices by email to your account address; you can send notices to {LEGAL.email}.</li>
       </Ul>
@@ -270,7 +270,7 @@ export default function TermsPage() {
       other={{ href: "/privacy", label: "Privacy Policy" }}
       intro={
         <p className="rounded-[10px] border border-line bg-white p-4 text-[14px]">
-          <strong className="text-ink">In short:</strong> use Junia for honest business outreach, send messages from your own accounts and follow the anti-spam laws
+          <strong className="text-ink">In short:</strong> use Junipa for honest business outreach, send messages from your own accounts and follow the anti-spam laws
           where your contacts are, check research before relying on it, and cancel your subscription whenever you like; you keep access until the end of the period
           you paid for.
         </p>

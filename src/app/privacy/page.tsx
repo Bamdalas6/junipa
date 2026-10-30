@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { LEGAL, LegalPage, Table, Ul, type LegalSection } from "@/components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Junia",
-  description: "How Junia collects, uses and protects personal data, including data about the businesses and people its research finds.",
+  title: "Privacy Policy · Junipa",
+  description: "How Junipa collects, uses and protects personal data, including data about the businesses and people its research finds.",
 };
 
 const mail = (
@@ -38,7 +38,7 @@ const sections: LegalSection[] = [
           rows={[
             ["Account details", "Email address, optional name, and a password. We store only a salted, one-way hash of your password, never the password itself.", "To create and secure your account."],
             ["Google sign-in", "If you continue with Google: your name, email address, profile picture and Google account ID. We don't receive your Google password.", "To sign you in."],
-            ["Research workspaces", "The websites you research, any goal or target market you set, and the research Junia produces for you (profiles, competitors, audiences, prospects, decision makers, outreach drafts).", "To provide the research and save it to your account."],
+            ["Research workspaces", "The websites you research, any goal or target market you set, and the research Junipa produces for you (profiles, competitors, audiences, prospects, decision makers, outreach drafts).", "To provide the research and save it to your account."],
             ["Pipeline", "Leads you track, their status, notes you write, messages you log as sent, and follow-up drafts and schedules.", "To provide results tracking and follow-up reminders."],
             ["Social growth plans", "The social profile links or handles you enter, and the public information those profiles show.", "To write the plan you asked for."],
             ["Billing", "Your plan, billing period, subscription status, renewal date, amount and our payment provider's customer and subscription IDs. Card details go directly to our payment provider; we never see or store them.", "To give you the plan you pay for."],
@@ -63,7 +63,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          To help you find customers, Junia researches businesses and the people who make buying decisions at them. If you are one of those people, this section
+          To help you find customers, Junipa researches businesses and the people who make buying decisions at them. If you are one of those people, this section
           explains what we hold about you.
         </p>
         <Ul>
@@ -90,7 +90,7 @@ const sections: LegalSection[] = [
           </li>
           <li>
             <strong className="text-ink">Your choice:</strong> you can ask us at any time what we hold about you, and ask us to delete it and not to include you in future
-            research. Email {mail}. When a Junia user contacts you, they do so from their own email or social accounts and are responsible for that outreach (see
+            research. Email {mail}. When a Junipa user contacts you, they do so from their own email or social accounts and are responsible for that outreach (see
             section 12).
           </li>
         </Ul>
@@ -124,7 +124,7 @@ const sections: LegalSection[] = [
     body: (
       <>
         <p>
-          Junia uses third-party AI models to write research and outreach drafts. To do this we send the model the relevant context: the website being researched,
+          Junipa uses third-party AI models to write research and outreach drafts. To do this we send the model the relevant context: the website being researched,
           public page text and search results, and for drafts, the research notes and your earlier message. We don&apos;t send your password or payment details.
         </p>
         <p>
@@ -132,7 +132,7 @@ const sections: LegalSection[] = [
           use submitted content to improve its products, so please don&apos;t enter confidential information into research fields. We will update this section if
           that changes.
         </p>
-        <p>AI output can be wrong or out of date. Junia checks businesses and people against public pages, but you should verify anything important before relying on it.</p>
+        <p>AI output can be wrong or out of date. Junipa checks businesses and people against public pages, but you should verify anything important before relying on it.</p>
       </>
     ),
   },
@@ -141,7 +141,7 @@ const sections: LegalSection[] = [
     title: "Who we share information with",
     body: (
       <>
-        <p>We share personal data only with service providers that help us run Junia, and only what each needs:</p>
+        <p>We share personal data only with service providers that help us run Junipa, and only what each needs:</p>
         <Table
           head={["Provider", "What they do", "Data involved"]}
           rows={[
@@ -246,10 +246,10 @@ const sections: LegalSection[] = [
   },
   {
     id: "your-outreach",
-    title: "When you contact the people Junia finds",
+    title: "When you contact the people Junipa finds",
     body: (
       <p>
-        Junia drafts messages, but you send them from your own email and social accounts. For that outreach, you decide who to contact and how, so you are responsible
+        Junipa drafts messages, but you send them from your own email and social accounts. For that outreach, you decide who to contact and how, so you are responsible
         for following the laws that apply, including the GDPR and ePrivacy rules, the UK PECR, the US CAN-SPAM Act, Canada&apos;s anti-spam law, the NDPA, and each
         platform&apos;s rules. Honour every request to stop contacting someone. Our <a href="/terms" className="text-accent hover:underline">Terms of Service</a> say more.
       </p>
@@ -258,7 +258,7 @@ const sections: LegalSection[] = [
   {
     id: "children",
     title: "Children",
-    body: <p>Junia is a business tool for adults. It isn&apos;t meant for anyone under 18, and we don&apos;t knowingly collect data from children. If you think a child has given us data, contact us and we will delete it.</p>,
+    body: <p>Junipa is a business tool for adults. It isn&apos;t meant for anyone under 18, and we don&apos;t knowingly collect data from children. If you think a child has given us data, contact us and we will delete it.</p>,
   },
   {
     id: "changes",
@@ -276,7 +276,7 @@ export default function PrivacyPage() {
       intro={
         <>
           <p>
-            This policy explains how {LEGAL.product} collects, uses and protects personal data: yours, if you use Junia, and that of the businesses and people our
+            This policy explains how {LEGAL.product} collects, uses and protects personal data: yours, if you use Junipa, and that of the businesses and people our
             research finds.
           </p>
           <p className="rounded-[10px] border border-line bg-white p-4 text-[14px]">

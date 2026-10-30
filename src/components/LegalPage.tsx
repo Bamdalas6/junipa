@@ -6,7 +6,7 @@ import { Logo } from "./ui";
 
 export const LEGAL = {
   operator: "Junipa's team",
-  product: "Junia",
+  product: "Junipa",
   site: "junipa.app",
   email: "privacy@junipa.app",
   updated: "25 October 2026",

@@ -1,6 +1,6 @@
-# Junia
+# Junipa
 
-AI go-to-market research for fashion, retail and service businesses. Type a website and Junia:
+AI go-to-market research for fashion, retail and service businesses. Type a website and Junipa:
 
 1. **Your brand**: reads the site and socials (what you sell, price tier, keywords, strengths, growth gaps)
 2. **Competitors**: real competing brands, ranked by overlap, plus the opening you can own

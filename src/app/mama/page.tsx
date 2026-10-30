@@ -5,7 +5,7 @@ import AdminDashboard from "@/components/AdminDashboard";
 import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
 import { isAdmin } from "@/lib/analytics";
 
-export const metadata: Metadata = { title: "Mama · Junia", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: "Mama · Junipa", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
 
 // The owner's dashboard (visitors and payments), only for the emails in ADMIN_EMAILS signed

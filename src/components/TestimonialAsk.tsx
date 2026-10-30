@@ -48,9 +48,9 @@ export function TestimonialAsk({ domain, brand }: { domain: string; brand: strin
     `Company: ${company.trim()}`,
     `Website researched: ${domain}`,
     "",
-    "I agree that Junia may publish this quote with my name, role and company.",
+    "I agree that Junipa may publish this quote with my name, role and company.",
   ].join("\n");
-  const href = `mailto:${TO}?subject=${encodeURIComponent("Junia testimonial")}&body=${encodeURIComponent(body)}`;
+  const href = `mailto:${TO}?subject=${encodeURIComponent("Junipa testimonial")}&body=${encodeURIComponent(body)}`;
 
   return (
     <section className="card relative overflow-hidden p-5 sm:p-6">
@@ -61,7 +61,7 @@ export function TestimonialAsk({ domain, brand }: { domain: string; brand: strin
         <span className="grid size-7 place-items-center rounded-md bg-accent-soft text-accent">
           <MessageSquareQuote className="size-4" />
         </span>
-        How did Junia do?
+        How did Junipa do?
       </p>
       <p className="mt-1.5 max-w-xl text-[13.5px] text-muted">A sentence or two about what Scout found for you helps other founders decide. We only publish it with your permission.</p>
       {!configured && <p className="mt-3 rounded-md border border-dashed border-warn/40 bg-warn-soft px-3 py-2 font-mono text-[11.5px] text-warn">Set NEXT_PUBLIC_FEEDBACK_EMAIL to turn this on. Only shown on your computer until then.</p>}
@@ -97,7 +97,7 @@ export function TestimonialAsk({ domain, brand }: { domain: string; brand: strin
           </div>
           <label className="flex items-start gap-2 text-[13px] text-ink-2">
             <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-0.5 size-4 accent-accent" />
-            Junia may publish this quote with my name, role and company.
+            Junipa may publish this quote with my name, role and company.
           </label>
           <div className="flex items-center gap-3">
             {ready && configured ? (
@@ -110,11 +110,11 @@ export function TestimonialAsk({ domain, brand }: { domain: string; brand: strin
                 }}
                 className="inline-flex h-9 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-2"
               >
-                Send to Junia
+                Send to Junipa
               </a>
             ) : (
               <Button variant="primary" disabled>
-                Send to Junia
+                Send to Junipa
               </Button>
             )}
             <button type="button" onClick={close} className="text-[13px] text-muted hover:text-ink">

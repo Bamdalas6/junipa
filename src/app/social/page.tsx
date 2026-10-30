@@ -4,7 +4,7 @@ import { WORLDWIDE, sanitizeMarket } from "@/lib/geo";
 import { PLATFORMS, type Platform } from "@/lib/social-shared";
 
 export const metadata: Metadata = {
-  title: "Grow your social accounts · Junia",
+  title: "Grow your social accounts · Junipa",
   description: "Drop your handles and get an audit, bio rewrites, content pillars, hooks, hashtags and a 30-day growth plan for your niche.",
 };
 

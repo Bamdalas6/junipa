@@ -174,7 +174,7 @@ function AuthDialog({
         {forgot && sentTo && (
           <div className="mt-5 rounded-lg border border-line bg-subtle p-4 text-[14px] leading-relaxed">
             <p>
-              If there&apos;s a Junia account for <span className="break-all font-medium">{sentTo}</span>, a reset link is on its way. It works once and expires in an hour.
+              If there&apos;s a Junipa account for <span className="break-all font-medium">{sentTo}</span>, a reset link is on its way. It works once and expires in an hour.
             </p>
             <p className="mt-2 text-[13px] text-muted">Nothing after a few minutes? Check your spam folder, or try again.</p>
           </div>
@@ -252,7 +252,7 @@ function AuthDialog({
           </p>
         )}
         <p className="mt-4 text-center text-[13.5px] text-muted">
-          {signup ? "Already have an account? " : forgot ? "Remembered it? " : "New to Junia? "}
+          {signup ? "Already have an account? " : forgot ? "Remembered it? " : "New to Junipa? "}
           <button type="button" onClick={() => switchTo(signup || forgot ? "signin" : "signup")} className="font-medium text-ink underline-offset-2 hover:underline">
             {signup || forgot ? "Sign in" : "Create an account"}
           </button>

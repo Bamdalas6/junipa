@@ -39,7 +39,7 @@ export function isLive() {
   return provider() !== null;
 }
 
-export const RESEARCHER = `You are Junia's go-to-market researcher. You research real businesses on the public web so a small team can find customers.
+export const RESEARCHER = `You are Junipa's go-to-market researcher. You research real businesses on the public web so a small team can find customers.
 Rules:
 - Use web search and web fetch to check facts. Prefer the company's own site, its social profiles, directories, press and marketplaces.
 - Only report companies and people you actually found on a public page, with the URL. Never invent names, domains, handles or emails.

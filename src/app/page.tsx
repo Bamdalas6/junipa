@@ -184,7 +184,7 @@ export default function Home() {
           {/* Phones and tablets: logo left, controls right. Desktop: links centred between them. */}
           <div ref={frameRef} className="mx-auto flex h-16 max-w-[1180px] items-center justify-between gap-3 border-x border-line px-4 sm:px-8 lg:grid lg:grid-cols-[1fr_auto_1fr]">
             <B className="justify-self-start">
-              <a href="#start" aria-label="Junia home">
+              <a href="#start" aria-label="Junipa home">
                 <Logo large />
               </a>
             </B>
@@ -352,7 +352,7 @@ export default function Home() {
                   <span className="size-2.5 rounded-full bg-[#fff]/15" />
                   <span className="size-2.5 rounded-full bg-[#fff]/15" />
                   <span className="flex-1" />
-                  <span className="font-mono text-[12px] text-[#81868d]">junia.run</span>
+                  <span className="font-mono text-[12px] text-[#81868d]">junipa.run</span>
                 </div>
                 <pre className="scroll-thin overflow-x-auto px-5 py-5 font-mono text-[13px] leading-[1.75] text-[#e0e2e5]">
                   {CODE.map((line, i) => (
@@ -482,7 +482,7 @@ export default function Home() {
                 <Logo />
               </B>
               <B as="p" className="mt-10 font-mono text-[12px] text-muted">
-                © 2026 Junia · AI research with live website checks
+                © 2026 Junipa · AI research with live website checks
               </B>
             </div>
             {FOOTER.map(([title, links]) => (
@@ -558,7 +558,7 @@ const k = (t: string) => <span className="text-[#9aa6ff]">{t}</span>;
 const v = (t: string) => <span className="text-[#7ee0b5]">{t}</span>;
 const c = (t: string) => <span className="text-[#6b7079]">{t}</span>;
 const CODE: React.ReactNode[] = [
-  c("# junia.run"),
+  c("# junipa.run"),
   <>{k("brand")}: {v("theeditroom.co")}</>,
   <>{k("market")}: {v("Lagos, Nigeria")}</>,
   <>{k("pipeline")}:</>,
@@ -781,7 +781,7 @@ function Proof({ onStart }: { onStart: () => void }) {
       {founding && real.length < 20 && <FoundingOffer percent={founding.percent} spots={founding.spots} onStart={onStart} />}
       {list.length > 0 && (
         <>
-          <Head title={"What customers\nsay about Junia."} body="From founders and sales teams who ran their first campaigns with Scout." />
+          <Head title={"What customers\nsay about Junipa."} body="From founders and sales teams who ran their first campaigns with Scout." />
           {samples && (
             <p className="-mt-8 mb-8 rounded-lg border border-dashed border-warn/40 bg-warn-soft px-4 py-3 font-mono text-[12px] text-warn">
               Sample cards, shown only on your computer. Add real quotes in src/lib/testimonials.ts and these disappear.
@@ -838,7 +838,7 @@ function FoundingOffer({ percent, spots, onStart }: { percent: number; spots: nu
         </B>
         <B as="h2" kind="type" speed={30} text={`Be one of our first ${spots}.`} className="mt-4 text-[32px] font-semibold leading-[1.1] tracking-[-0.03em] sm:text-[40px]" />
         <B as="p" className="mt-5 max-w-[520px] text-[15.5px] leading-[1.6] text-muted">
-          Junia is new. Our first {spots} customers get {percent}% off every campaign, and we&apos;d love your honest feedback on what to build next.
+          Junipa is new. Our first {spots} customers get {percent}% off every campaign, and we&apos;d love your honest feedback on what to build next.
         </B>
         <B className="mt-8">
           <a href="#start" onClick={onStart} className="inline-flex h-11 items-center gap-1.5 rounded-lg bg-ink px-5 text-[14.5px] font-semibold text-white hover:bg-ink-2">

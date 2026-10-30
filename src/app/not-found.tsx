@@ -41,7 +41,7 @@ export default function NotFound() {
       </section>
 
       <footer>
-        <div className="mx-auto max-w-[1180px] border-x border-line px-5 py-10 font-mono text-[12px] text-muted sm:px-8">© 2026 Junia</div>
+        <div className="mx-auto max-w-[1180px] border-x border-line px-5 py-10 font-mono text-[12px] text-muted sm:px-8">© 2026 Junipa</div>
       </footer>
     </main>
   );

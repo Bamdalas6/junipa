@@ -4,7 +4,7 @@ import { PLAN_LIST, isInterval, isPlan, type BillingStatus, type Entitled, type 
 
 // Subscriptions on Bachs. A subscription starts when the customer completes a hosted
 // checkout for one of the four recurring products (BACHS_PRODUCT_STARTER_MONTHLY, ...).
-// Junia keeps a copy in D1 and re-reads it from Bachs every few hours and after each
+// Junipa keeps a copy in D1 and re-reads it from Bachs every few hours and after each
 // renewal date, so cancellations and failed payments take effect without webhooks.
 //
 // Founding members keep their price: a subscription stays on the product (and price) it

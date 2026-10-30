@@ -1,4 +1,4 @@
-// Cloudflare Workers config for Junia (built with @opennextjs/cloudflare).
+// Cloudflare Workers config for Junipa (built with @opennextjs/cloudflare).
 // Secrets (API keys) are not in this file: set them in the Cloudflare dashboard
 // (Worker > Settings > Variables and Secrets) or with `npx wrangler secret put NAME`.
 {

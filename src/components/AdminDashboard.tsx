@@ -159,7 +159,7 @@ export default function AdminDashboard() {
             <p className="mt-0.5 text-[13.5px] text-muted">
               {view === "visitors"
                 ? "Who comes to junipa.app, what they explore and how far they get. Visitors are counted once a day; your own visits aren't counted."
-                : "Money received: new subscriptions, renewals and one-time purchases, as Junia recorded them when each payment was confirmed."}
+                : "Money received: new subscriptions, renewals and one-time purchases, as Junipa recorded them when each payment was confirmed."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">

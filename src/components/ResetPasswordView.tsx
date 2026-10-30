@@ -71,7 +71,7 @@ export default function ResetPasswordView() {
               <h1 className="mt-3 text-[21px] font-semibold tracking-[-0.02em]">Password changed</h1>
               <p className="mt-1.5 text-[14px] leading-relaxed text-muted">You&apos;re signed in on this device. Any other devices have been signed out.</p>
               <Link href="/" className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-lg bg-ink text-[14.5px] font-semibold text-white hover:bg-ink-2">
-                Go to Junia
+                Go to Junipa
               </Link>
             </>
           ) : !token ? (

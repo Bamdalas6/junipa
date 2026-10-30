@@ -136,7 +136,7 @@ export const SCHEMA = [
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
   )`,
-  // Checkouts started from Junia, so a returning customer is matched to their subscription.
+  // Checkouts started from Junipa, so a returning customer is matched to their subscription.
   `CREATE TABLE IF NOT EXISTS billing_checkouts (
     checkout_id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,

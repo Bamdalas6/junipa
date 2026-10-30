@@ -481,7 +481,7 @@ async function fetchHtml(url: string, hops = 0, opts: { browserLike?: boolean; m
     signal: AbortSignal.timeout(6000),
     headers: opts.browserLike
       ? { "user-agent": BROWSER_UA, accept: "text/html,application/xhtml+xml", "accept-language": "en-US,en;q=0.9" }
-      : { "user-agent": "Mozilla/5.0 (compatible; JuniaBot/0.1)", accept: "text/html,application/xhtml+xml" },
+      : { "user-agent": "Mozilla/5.0 (compatible; JunipaBot/0.1)", accept: "text/html,application/xhtml+xml" },
   });
   const location = res.headers.get("location");
   if (res.status >= 300 && res.status < 400 && location) {

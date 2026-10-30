@@ -15,8 +15,8 @@ const jetbrains = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500"], v
 const BUILD_BOOT = `try{var t=localStorage.getItem("junia-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}try{if(location.pathname==="/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches)document.documentElement.classList.add("lp-build")}catch(e){}`;
 
 export const metadata: Metadata = {
-  title: "Junia: outbound research on autopilot",
-  description: "Type your website. Junia's agent researches your brand, competitors and buyers, then hands you verified prospects and ready-to-send sequences.",
+  title: "Junipa: outbound research on autopilot",
+  description: "Type your website. Junipa's agent researches your brand, competitors and buyers, then hands you verified prospects and ready-to-send sequences.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

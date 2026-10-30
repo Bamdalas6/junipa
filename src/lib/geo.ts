@@ -15,7 +15,7 @@ const CODES =
     " ",
   );
 
-// Shown first in the picker: the markets most Junia users sell into.
+// Shown first in the picker: the markets most Junipa users sell into.
 export const POPULAR = ["NG", "GH", "KE", "ZA", "GB", "US", "CA", "AE"];
 
 let names: Intl.DisplayNames | undefined;

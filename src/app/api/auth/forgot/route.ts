@@ -35,13 +35,13 @@ export async function POST(request: Request) {
     const mail = buttonEmail({
       heading: "Reset your password",
       intro: googleOnly
-        ? "Someone asked to reset the password for your Junia account. You sign in with Google, so you don't need one, but you can set a password here if you'd like to use your email too."
-        : "Someone asked to reset the password for your Junia account. Use the button below to choose a new one.",
+        ? "Someone asked to reset the password for your Junipa account. You sign in with Google, so you don't need one, but you can set a password here if you'd like to use your email too."
+        : "Someone asked to reset the password for your Junipa account. Use the button below to choose a new one.",
       button: "Choose a new password",
       url,
       outro: `The link works once and expires in ${RESET_MINUTES} minutes. If you didn't ask for this, ignore this email: your password stays the same.`,
     });
-    if (!(await sendEmail({ to: user.email, subject: "Reset your Junia password", ...mail })))
+    if (!(await sendEmail({ to: user.email, subject: "Reset your Junipa password", ...mail })))
       return Response.json({ error: "We couldn't send the email just now. Try again in a minute." }, { status: 502 });
   }
   return Response.json({ ok: true });

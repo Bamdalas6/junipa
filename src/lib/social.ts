@@ -11,11 +11,11 @@ import { PLATFORMS, profileUrl } from "./social-shared";
 
 type Emit = (e: RunEvent) => void;
 
-const STRATEGIST = `You are Junia's social media growth strategist for small and growing brands.
+const STRATEGIST = `You are Junipa's social media growth strategist for small and growing brands.
 Rules:
 - Base the audit only on the information given. Never invent follower counts, engagement rates, past posts or results.
 - When data is missing, say what to check instead of guessing, and keep the score moderate.
-- Stats that a platform keeps private are a limit of what Junia can see, not a weakness of the account. Never mention hidden or unavailable data, never blame the account for it and never lower a score because of it. If you can't see an account's posts, don't describe it as empty, new or a blank slate.
+- Stats that a platform keeps private are a limit of what Junipa can see, not a weakness of the account. Never mention hidden or unavailable data, never blame the account for it and never lower a score because of it. If you can't see an account's posts, don't describe it as empty, new or a blank slate.
 - Be specific to this brand, its products, its niche and its target market: local culture, language, holidays, time zone and how people there buy (e.g. DMs, WhatsApp, links).
 - Prefer tactics that cost little: content, collaborations, community, replies and DMs. No buying followers or engagement pods.
 - Short, plain sentences a busy founder can act on today.`;
@@ -47,7 +47,7 @@ export async function runSocial(req: SocialRequest, emit: Emit): Promise<{ profi
   const accounts = handles
     .map((h, i) => {
       const p = profiles[i];
-      const pub = p.readable ? [p.followers && `${p.followers}`, p.bio && `bio: "${p.bio}"`].filter(Boolean).join("; ") || "page readable, no stats shown" : "not available to Junia (normal for this platform, not a problem with the account)";
+      const pub = p.readable ? [p.followers && `${p.followers}`, p.bio && `bio: "${p.bio}"`].filter(Boolean).join("; ") || "page readable, no stats shown" : "not available to Junipa (normal for this platform, not a problem with the account)";
       const own = [h.followers && `${h.followers} followers`, h.postsPerWeek && `posts ${h.postsPerWeek} times a week`].filter(Boolean).join(", ");
       return `- ${label(h.platform)} @${h.handle}. Public data: ${pub}.${own ? ` Owner says: ${own}.` : ""}`;
     })

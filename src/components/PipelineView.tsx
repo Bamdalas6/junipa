@@ -497,7 +497,7 @@ function LeadDrawer({ lead, pro, onClose, onChanged, onStatus }: { lead: Lead; p
   );
 }
 
-/** Record something sent outside Junia (a call, a DM typed by hand). */
+/** Record something sent outside Junipa (a call, a DM typed by hand). */
 function LogMessage({ lead, onLogged }: { lead: Lead; onLogged: () => void }) {
   const [openForm, setOpenForm] = useState(false);
   const [channel, setChannel] = useState(lead.channel ?? "email");

@@ -462,7 +462,7 @@ export default function SocialView({
         <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-4 border-x border-line px-5 pb-16 pt-12 sm:px-8">
           <Logo />
           <span className="flex-1" />
-          <span className="font-mono text-[12px] text-muted">© 2026 Junia · social growth plans</span>
+          <span className="font-mono text-[12px] text-muted">© 2026 Junipa · social growth plans</span>
         </div>
       </footer>
     </main>

@@ -34,7 +34,7 @@ export function Logo({ compact, large }: { compact?: boolean; large?: boolean })
           <path d="M6 9V5h4" />
         </svg>
       </span>
-      {!compact && "Junia"}
+      {!compact && "Junipa"}
     </span>
   );
 }
