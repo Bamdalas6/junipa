@@ -26,6 +26,12 @@ export const SCHEMA = [
     created_at INTEGER NOT NULL
   )`,
   `CREATE INDEX IF NOT EXISTS password_resets_user ON password_resets (user_id)`,
+  // Failed sign-ins per email, so the per-account limit holds across every server instance.
+  `CREATE TABLE IF NOT EXISTS login_failures (
+    email TEXT NOT NULL,
+    at INTEGER NOT NULL
+  )`,
+  `CREATE INDEX IF NOT EXISTS login_failures_email ON login_failures (email, at)`,
   `CREATE TABLE IF NOT EXISTS workspaces (
     user_id TEXT NOT NULL,
     domain TEXT NOT NULL,

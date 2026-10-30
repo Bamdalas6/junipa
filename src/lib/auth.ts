@@ -103,9 +103,48 @@ export async function upsertGoogleUser(g: { sub: string; email: string; name?: s
   return createUser({ email: g.email, name: g.name, googleSub: g.sub, avatar: g.picture });
 }
 
+/* ---------- Failed sign-ins ---------- */
+
+// Counted in the database rather than in memory: Cloudflare spreads requests over many
+// server instances, so only a shared count stops someone guessing an account's password.
+const FAILURE_WINDOW = 15 * 60_000;
+export const MAX_FAILURES = 10;
+
+/** Failed sign-ins for this email in the last 15 minutes. */
+export async function recentFailures(email: string) {
+  const row = await (await db())
+    .prepare("SELECT COUNT(*) AS n FROM login_failures WHERE email = ? AND at > ?")
+    .bind(normalEmail(email), Date.now() - FAILURE_WINDOW)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/** Records a failed sign-in (known email or not, so both look the same) and drops expired ones. */
+export async function recordFailure(email: string) {
+  const now = Date.now();
+  const database = await db();
+  await database.batch([
+    database.prepare("INSERT INTO login_failures (email, at) VALUES (?, ?)").bind(normalEmail(email), now),
+    database.prepare("DELETE FROM login_failures WHERE at <= ?").bind(now - FAILURE_WINDOW),
+  ]);
+}
+
+export async function clearFailures(email: string) {
+  await (await db()).prepare("DELETE FROM login_failures WHERE email = ?").bind(normalEmail(email)).run();
+}
+
 /* ---------- Forgotten passwords ---------- */
 
 export const RESET_MINUTES = 60;
+
+/** Whether a reset link went to this account in the last minute (at most one a minute, so nobody can flood an inbox). */
+export async function resetSentRecently(userId: string) {
+  const row = await (await db())
+    .prepare("SELECT 1 AS yes FROM password_resets WHERE user_id = ? AND created_at > ? LIMIT 1")
+    .bind(userId, Date.now() - 60_000)
+    .first<{ yes: number }>();
+  return !!row;
+}
 
 /** A one-time reset token for the emailed link; earlier unused links for this account stop working. */
 export async function createPasswordReset(userId: string) {
@@ -132,6 +171,8 @@ export async function resetPassword(token: string, passwordHash: string) {
     .first<{ user_id: string; expires_at: number }>();
   if (!row || row.expires_at <= Date.now()) return null;
   await database.batch([
+    // A new password also lifts any lock from wrong tries (someone may have locked the account on purpose).
+    database.prepare("DELETE FROM login_failures WHERE email = (SELECT email FROM users WHERE id = ?)").bind(row.user_id),
     database.prepare("UPDATE users SET password_hash = ? WHERE id = ?").bind(passwordHash, row.user_id),
     database.prepare("DELETE FROM sessions WHERE user_id = ?").bind(row.user_id),
     database.prepare("DELETE FROM password_resets WHERE user_id = ?").bind(row.user_id),

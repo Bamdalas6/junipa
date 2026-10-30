@@ -1,19 +1,17 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 
-// Cloudflare's shared rate limiters (the "ratelimits" bindings in wrangler.jsonc). The
-// in-memory limits in guard.ts only count requests that reach the same server instance,
-// and Cloudflare spreads traffic over many; these count across all of them in a location.
-// Wherever a binding isn't available (e.g. local dev) they let the request through, and
-// the in-memory limits still apply.
+// Cloudflare's shared rate limiters (the "ratelimits" bindings in wrangler.jsonc), a soft
+// layer against floods from one address. They're approximate by design: each server
+// counts locally and syncs in the background, so a burst can get past the limit. Limits
+// that must hold (wrong passwords per account, reset emails) are counted in the database
+// instead (see auth.ts). Where a binding isn't available they let the request through.
 
 /** Per visitor: sign-in, sign-up, password reset and Google sign-in starts. */
 export const AUTH_IP = "AUTH_IP_LIMITER";
-/** Per account email: sign-in attempts and reset emails. */
-export const AUTH_ACCOUNT = "AUTH_ACCOUNT_LIMITER";
 /** Per visitor: research runs and growth plans, which spend AI and search credits. */
 export const RUN_IP = "RUN_IP_LIMITER";
 
-type Binding = typeof AUTH_IP | typeof AUTH_ACCOUNT | typeof RUN_IP;
+type Binding = typeof AUTH_IP | typeof RUN_IP;
 interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;
 }
