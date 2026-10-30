@@ -51,13 +51,16 @@ async function generate(
   opts: { bench?: boolean; timeout?: number } = {},
 ): Promise<{ res: GenerateContentResponse; model: string }> {
   let last: unknown = new ScoutError("Scout is busy right now. Try again in a minute.");
+  // Long enough for the smallest model, which can take 30s+ for a full prospect list when the
+  // others are overloaded. Gemini enforces this deadline itself (a 504 "Deadline expired").
+  const timeout = opts.timeout ?? 90_000;
   // When every model is benched, still try the last one rather than fail outright.
   const ready = models.filter((m) => (benched.get(m) ?? 0) <= Date.now());
   for (const model of ready.length ? ready : models.slice(-1)) {
     for (let attempt = 0; attempt < 2; attempt++) {
       const t0 = Date.now();
       try {
-        const res = await ai.models.generateContent({ model, ...params, config: { ...params.config, httpOptions: { timeout: opts.timeout ?? 35_000 } } });
+        const res = await ai.models.generateContent({ model, ...params, config: { ...params.config, httpOptions: { timeout } } });
         console.info(`[gemini] ${model} ok ${Date.now() - t0}ms`);
         return { res, model };
       } catch (e) {
@@ -71,8 +74,13 @@ async function generate(
           break;
         }
         if (status >= 500) {
-          if (attempt === 0) await sleep(1000);
-          continue; // busy: retry once, then move on
+          if (attempt === 0) {
+            await sleep(1000);
+            continue; // busy: retry once
+          }
+          // Busy twice running: skip it for a minute instead of waiting on it every call.
+          if (model !== models[models.length - 1]) benched.set(model, Date.now() + 60_000);
+          continue;
         }
         if (status === 429 || status === 404 || status === 403) {
           // A free-tier limit of 0 won't change soon, so skip that model for an hour.
